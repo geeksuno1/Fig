@@ -177,7 +177,12 @@ td img{width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:
   <header class="top">
     <div class="brand"><span class="dot"></span><h1>FIGURE VAULT</h1></div>
     <div class="actions" style="position:relative">
+      <div class="view-toggle" style="margin-left:0">
+        <button id="btn-page-collection" class="active" onclick="setPage('collection')">Collection</button>
+        <button id="btn-page-dashboard" onclick="setPage('dashboard')">Dashboard</button>
+      </div>
       <button class="btn btn-primary" onclick="openAddModal()">+ Add Order</button>
+      <button class="btn btn-sm btn-dark" onclick="openCategorizeModal()">🏷 Categorize</button>
       <button class="btn btn-ghost" id="settings-btn" onclick="toggleSettingsMenu()">⚙ Settings</button>
       <div id="settings-menu" class="settings-menu hidden">
         <div class="settings-menu-label">Apps Script Web App URL</div>
@@ -189,6 +194,7 @@ td img{width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:
     </div>
   </header>
   <main>
+   <div id="page-collection">
     <div class="dash-grid" id="dashboard"></div>
 
     <div class="toolbar">
@@ -199,6 +205,7 @@ td img{width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:
       </select>
       <select id="f-payment" onchange="render()"><option value="">All Payment</option><option value="Paid">Paid</option><option value="Payment Pending">Payment Pending</option></select>
       <select id="f-type" onchange="render()"><option value="">All Types</option><option value="Individual Figure">Individual</option><option value="Group Buy / Bundle">Group Buy</option></select>
+      <select id="f-ip" onchange="render()"><option value="">All IPs</option></select>
       <select id="f-sort" onchange="render()">
         <option value="date-desc">Newest First</option><option value="date-asc">Oldest First</option>
         <option value="price-desc">Price: High-Low</option><option value="price-asc">Price: Low-High</option>
@@ -218,12 +225,27 @@ td img{width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:
       <button class="btn btn-primary" onclick="openGroupSelectedModal()">Group Into Bundle</button>
       <button class="btn btn-ghost" onclick="toggleSelectMode()">Cancel</button>
     </div>
+    <div id="categorize-bar" class="select-bar hidden">
+      <span id="categorize-count">0 selected</span>
+      <button class="btn btn-primary" onclick="applyCategorize()">Apply Tag</button>
+      <button class="btn btn-sm btn-ghost" onclick="openCategorizeModal()">Change Value</button>
+      <button class="btn btn-ghost" onclick="toggleCategorizeMode()">Cancel</button>
+    </div>
     <div id="table-wrap" class="table-wrap hidden">
       <table>
-        <thead><tr><th>Image</th><th>Figurine</th><th>Seller</th><th>Type</th><th>Order Date</th><th>Price</th><th>Paid/Due</th><th>Delivery</th><th>Actions</th></tr></thead>
+        <thead><tr><th>#</th><th>Image</th><th>Figurine</th><th>Seller</th><th>IP</th><th>Type</th><th>Order Date</th><th>Price</th><th>Paid/Due</th><th>Delivery</th><th>Actions</th></tr></thead>
         <tbody id="table-body"></tbody>
       </table>
     </div>
+   </div>
+
+   <div id="page-dashboard" class="hidden">
+    <div class="toolbar">
+      <select id="db-seller" onchange="renderAnalyticsDashboard()"><option value="">All Sellers</option></select>
+      <select id="db-ip" onchange="renderAnalyticsDashboard()"><option value="">All IPs</option></select>
+    </div>
+    <div id="analytics-dashboard"></div>
+   </div>
   </main>
 </div>
 
@@ -234,6 +256,8 @@ td img{width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:
 const LS = {
   apiUrl: 'afv_api_url', token: 'afv_token', view: 'afv_view'
 };
+const IP_PRESETS = ['Dragon Ball','One Piece','MHA','Cartoon Network','DC','Marvel','Naruto','One Punch Man','Pokemon','Others'];
+const PRODUCT_TYPE_OPTIONS = ['Funko Pop','Banpresto','Gunpla','Bandai Kits','3D Prints','Others'];
 function getApiUrl(){ return localStorage.getItem(LS.apiUrl) || ''; }
 function saveApiUrl(){
   const v = document.getElementById('cfg-api-url').value.trim();
@@ -316,7 +340,16 @@ async function showApp(){
 }
 
 /* ===================== Data ===================== */
-let STATE = { orders: [], figures: [], sellers: [], view: localStorage.getItem(LS.view) || 'gallery', selectMode: false, selected: new Set() };
+let STATE = { orders: [], figures: [], sellers: [], view: localStorage.getItem(LS.view) || 'gallery', selectMode: false, selected: new Set(), categorizeMode: false, catSelected: new Set(), page: 'collection' };
+
+function setPage(p){
+  STATE.page = p;
+  document.getElementById('btn-page-collection').classList.toggle('active', p==='collection');
+  document.getElementById('btn-page-dashboard').classList.toggle('active', p==='dashboard');
+  document.getElementById('page-collection').classList.toggle('hidden', p!=='collection');
+  document.getElementById('page-dashboard').classList.toggle('hidden', p!=='dashboard');
+  if(p==='dashboard') renderAnalyticsDashboard();
+}
 
 async function loadData(){
   document.getElementById('gallery').innerHTML = '<div class="loading">Loading your collection…</div>';
@@ -326,15 +359,36 @@ async function loadData(){
   STATE.figures = data.figures || [];
   STATE.sellers = data.sellers || [];
   populateSellerFilter();
+  populateIpFilters();
   render();
 }
 
 function populateSellerFilter(){
-  const sel = document.getElementById('f-seller');
-  const current = sel.value;
-  sel.innerHTML = '<option value="">All Sellers</option>' +
-    STATE.sellers.map(s=>`<option value="${esc(s['Seller Name'])}">${esc(s['Seller Name'])}</option>`).join('');
-  sel.value = current;
+  ['f-seller','db-seller'].forEach(id=>{
+    const sel = document.getElementById(id);
+    if(!sel) return;
+    const current = sel.value;
+    sel.innerHTML = '<option value="">All Sellers</option>' +
+      STATE.sellers.map(s=>`<option value="${esc(s['Seller Name'])}">${esc(s['Seller Name'])}</option>`).join('');
+    sel.value = current;
+  });
+}
+
+function ipOptionsList(){
+  const used = Array.from(new Set(STATE.figures.map(f=>f['IP']).filter(Boolean)));
+  const base = IP_PRESETS.filter(x=>x!=='Others');
+  const extra = used.filter(x=>base.indexOf(x)===-1 && x!=='Others');
+  return [...base, ...extra, 'Others'];
+}
+function populateIpFilters(){
+  const opts = ipOptionsList();
+  ['f-ip','db-ip'].forEach(id=>{
+    const sel = document.getElementById(id);
+    if(!sel) return;
+    const current = sel.value;
+    sel.innerHTML = '<option value="">All IPs</option>' + opts.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
+    sel.value = current;
+  });
 }
 
 /* ===================== Derived rows ===================== */
@@ -351,13 +405,27 @@ function buildCards(){
   return STATE.figures.map(f=>{
     const o = om[f['Order ID']] || {};
     const isGroup = o['Purchase Type'] === 'Group Buy / Bundle';
+    const price = Number(f['Allocated Price']||0);
+    let dueAmount, totalPrice;
+    if(isGroup){
+      // reallocate the bundle's total due amount across figures in the same
+      // proportion as the paid amount was allocated (paid share = allocated/bundleTotal)
+      const bundleTotal = Number(o['Total Price']||0);
+      const bundleDue = Number(o['Due Amount']||0);
+      const share = bundleTotal > 0 ? price / bundleTotal : 0;
+      dueAmount = Math.round(bundleDue * share * 100) / 100;
+      totalPrice = price;
+    } else {
+      dueAmount = Number(o['Due Amount']||0);
+      totalPrice = Number(o['Total Price']||price);
+    }
     return {
       figureId: f['Figure ID'], orderId: f['Order ID'], name: f['Figurine Name'],
-      seller: o['Seller'] || f['Seller'], price: Number(f['Allocated Price']||0),
+      seller: o['Seller'] || f['Seller'], price: price, totalPrice,
       orderDate: o['Order Date']||'', delivery: f['Delivery Status'] || o['Delivery Status'] || 'Ordered',
       paymentStatus: o['Payment Status'] || 'Payment Pending', isGroup, groupBuyName: o['Group Buy Name'],
       groupBuyId: o['Group Buy ID'], imageUrl: f['Image URL'], purchaseType: o['Purchase Type'],
-      dueAmount: Number(o['Due Amount']||0)
+      dueAmount, ip: f['IP']||'', productType: f['Product Type']||''
     };
   });
 }
@@ -369,12 +437,14 @@ function filteredSorted(){
   const delivery = document.getElementById('f-delivery').value;
   const payment = document.getElementById('f-payment').value;
   const type = document.getElementById('f-type').value;
+  const ip = document.getElementById('f-ip') ? document.getElementById('f-ip').value : '';
   const sort = document.getElementById('f-sort').value;
   if(q) rows = rows.filter(r => (r.name||'').toLowerCase().includes(q) || (r.seller||'').toLowerCase().includes(q) || (r.groupBuyName||'').toLowerCase().includes(q));
   if(seller) rows = rows.filter(r=>r.seller===seller);
   if(delivery) rows = rows.filter(r=>r.delivery===delivery);
   if(payment) rows = rows.filter(r=>r.paymentStatus===payment);
   if(type) rows = rows.filter(r=>r.purchaseType===type);
+  if(ip) rows = rows.filter(r=>r.ip===ip);
   rows.sort((a,b)=>{
     if(sort==='price-desc') return b.price-a.price;
     if(sort==='price-asc') return a.price-b.price;
@@ -408,6 +478,46 @@ function renderDashboard(){
   `).join('');
 }
 
+/* ===================== Analytics Dashboard (second page) ===================== */
+function renderAnalyticsDashboard(){
+  const sellerSel = document.getElementById('db-seller');
+  const ipSel = document.getElementById('db-ip');
+  if(!sellerSel || !ipSel) return;
+  const seller = sellerSel.value;
+  const ip = ipSel.value;
+  let rows = buildCards();
+  if(seller) rows = rows.filter(r=>r.seller===seller);
+  if(ip) rows = rows.filter(r=>r.ip===ip);
+
+  const bought = rows.length;
+  const fullyPaid = rows.filter(r=>r.paymentStatus==='Paid');
+  const partiallyPaid = rows.filter(r=>r.paymentStatus!=='Paid');
+  const delivered = rows.filter(r=>r.delivery==='Delivered');
+  const toBeDelivered = rows.filter(r=>r.delivery!=='Delivered');
+
+  const fullyPaidValue = fullyPaid.reduce((s,r)=>s+r.totalPrice,0);
+  const partiallyPaidDue = partiallyPaid.reduce((s,r)=>s+r.dueAmount,0);
+  const deliveredValue = delivered.reduce((s,r)=>s+r.totalPrice,0);
+  const toBeDeliveredValue = toBeDelivered.reduce((s,r)=>s+r.totalPrice,0);
+  const toBeDeliveredDue = toBeDelivered.reduce((s,r)=>s+r.dueAmount,0);
+
+  const el = document.getElementById('analytics-dashboard');
+  el.innerHTML = `
+    <div class="dash-grid">
+      <div class="stat-card"><div class="label">Figurines Bought</div><div class="value">${bought}</div></div>
+      <div class="stat-card ok"><div class="label">Completely Paid</div><div class="value">${fullyPaid.length}</div></div>
+      <div class="stat-card ok"><div class="label">Fully Paid — Order Value</div><div class="value">₹${fmt(fullyPaidValue)}</div></div>
+      <div class="stat-card warn"><div class="label">Partially Paid</div><div class="value">${partiallyPaid.length}</div></div>
+      <div class="stat-card warn"><div class="label">Partially Paid — Due</div><div class="value">₹${fmt(partiallyPaidDue)}</div></div>
+      <div class="stat-card ok"><div class="label">Delivered</div><div class="value">${delivered.length}</div></div>
+      <div class="stat-card ok"><div class="label">Delivered — Order Value</div><div class="value">₹${fmt(deliveredValue)}</div></div>
+      <div class="stat-card accent"><div class="label">To Be Delivered</div><div class="value">${toBeDelivered.length}</div></div>
+      <div class="stat-card accent"><div class="label">To Be Delivered — Order Value</div><div class="value">₹${fmt(toBeDeliveredValue)}</div></div>
+      <div class="stat-card accent"><div class="label">To Be Delivered — Due</div><div class="value">₹${fmt(toBeDeliveredDue)}</div></div>
+    </div>
+  `;
+}
+
 /* ===================== Render list ===================== */
 function chipClass(v){ return (v||'').toLowerCase().replace(/\s+/g,''); }
 function fmt(n){ return Number(n||0).toLocaleString('en-IN'); }
@@ -431,27 +541,37 @@ function render(){
 function renderGallery(rows){
   const el = document.getElementById('gallery');
   if(!rows.length){ el.innerHTML = '<div class="empty">No figures match your filters yet.</div>'; return; }
-  el.innerHTML = rows.map(r=>{
+  const catMode = STATE.categorizeMode;
+  el.innerHTML = rows.map((r,idx)=>{
     const selectable = STATE.selectMode && !r.isGroup;
+    const catSelectable = catMode; // categorize mode allows group-buy figures too
     const checked = STATE.selected.has(r.figureId);
-    const cardClick = STATE.selectMode
-      ? (selectable ? `toggleSelectFigure('${r.figureId}')` : '')
-      : (r.isGroup ? `openGroupModal('${r.groupBuyId}')` : `openEditModal('${r.orderId}')`);
-    const imgClick = STATE.selectMode ? (selectable ? `toggleSelectFigure('${r.figureId}')` : '') : `event.stopPropagation(); openViewModal('${r.figureId}')`;
+    const catChecked = STATE.catSelected && STATE.catSelected.has(r.figureId);
+    let cardClick;
+    if(catMode){ cardClick = `toggleCategorizeFigure('${r.figureId}')`; }
+    else if(STATE.selectMode){ cardClick = selectable ? `toggleSelectFigure('${r.figureId}')` : ''; }
+    else { cardClick = r.isGroup ? `openGroupModal('${r.groupBuyId}')` : `openEditModal('${r.orderId}')`; }
+    const imgClick = (STATE.selectMode||catMode) ? cardClick : `event.stopPropagation(); openViewModal('${r.figureId}')`;
+    const showCheckbox = catMode ? catSelectable : selectable;
+    const isChecked = catMode ? catChecked : checked;
+    const toggleFn = catMode ? 'toggleCategorizeFigure' : 'toggleSelectFigure';
     return `
-    <div class="card ${checked?'selected-card':''}" onclick="${cardClick}">
+    <div class="card ${isChecked?'selected-card':''}" onclick="${cardClick}">
       <div class="img-wrap" onclick="${imgClick}">
-        ${selectable ? `<input type="checkbox" class="card-checkbox" ${checked?'checked':''} onclick="event.stopPropagation(); toggleSelectFigure('${r.figureId}')">` : ''}
+        <span class="badge" style="left:auto;right:8px;background:var(--ink);color:#fff">#${idx+1}</span>
+        ${showCheckbox ? `<input type="checkbox" class="card-checkbox" style="right:auto;left:8px" ${isChecked?'checked':''} onclick="event.stopPropagation(); ${toggleFn}('${r.figureId}')">` : ''}
         ${r.isGroup ? '<span class="badge">GROUP BUY</span>' : ''}
         ${r.imageUrl ? `<img src="${esc(r.imageUrl)}" loading="lazy">` : '<span class="ph">NO IMAGE</span>'}
       </div>
       <div class="body">
         <h3>${esc(r.name)}</h3>
         <div class="meta">${esc(r.seller)} ${r.orderDate?'· '+esc(r.orderDate):''}</div>
-        <div class="meta">${r.isGroup ? 'Allocated ₹'+fmt(r.price) : '₹'+fmt(r.price)}</div>
+        <div class="meta">Total ₹${fmt(r.totalPrice)} &nbsp;·&nbsp; ${r.dueAmount>0 ? 'Due ₹'+fmt(r.dueAmount) : 'Due ₹0'}</div>
         <div class="chips">
           <span class="chip ${r.paymentStatus==='Paid'?'paid':'pending'}">${r.isGroup ? 'GROUP BUY — '+(r.paymentStatus==='Paid'?'PAID':'PARTIALLY PAID') : (r.paymentStatus==='Paid'?'PAID':'PAYMENT PENDING')}</span>
           <span class="chip ${chipClass(r.delivery)}">${esc(r.delivery)}</span>
+          ${r.ip ? `<span class="chip ordered">${esc(r.ip)}</span>` : ''}
+          ${r.productType ? `<span class="chip ordered">${esc(r.productType)}</span>` : ''}
         </div>
       </div>
     </div>`;
@@ -461,6 +581,7 @@ function renderGallery(rows){
 function toggleSelectMode(){
   STATE.selectMode = !STATE.selectMode;
   if(!STATE.selectMode) STATE.selected = new Set();
+  if(STATE.selectMode && STATE.categorizeMode){ STATE.categorizeMode = false; STATE.catSelected = new Set(); }
   document.getElementById('btn-group-mode').classList.toggle('active-mode', STATE.selectMode);
   if(STATE.view !== 'gallery') setView('gallery'); else render();
 }
@@ -476,20 +597,91 @@ function updateSelectBar(){
   } else {
     bar.classList.add('hidden');
   }
+  const catBar = document.getElementById('categorize-bar');
+  if(STATE.categorizeMode && STATE.catSelected.size > 0){
+    catBar.classList.remove('hidden');
+    document.getElementById('categorize-count').textContent = STATE.catSelected.size + ' selected';
+  } else {
+    catBar.classList.add('hidden');
+  }
+}
+
+/* ---- Bulk categorize existing figures (IP / Product Type), including group-buy figures ---- */
+function toggleCategorizeMode(){
+  STATE.categorizeMode = !STATE.categorizeMode;
+  if(!STATE.categorizeMode) STATE.catSelected = new Set();
+  if(STATE.categorizeMode && STATE.selectMode){ STATE.selectMode = false; STATE.selected = new Set(); document.getElementById('btn-group-mode').classList.remove('active-mode'); }
+  if(STATE.view !== 'gallery') setView('gallery'); else render();
+}
+function toggleCategorizeFigure(figureId){
+  if(STATE.catSelected.has(figureId)) STATE.catSelected.delete(figureId); else STATE.catSelected.add(figureId);
+  render();
+}
+function openCategorizeModal(){
+  if(STATE.page !== 'collection') setPage('collection');
+  if(!STATE.categorizeMode) toggleCategorizeMode();
+  modalRoot.innerHTML = `
+    <div class="overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal" style="max-width:420px">
+        <button class="close-x" onclick="closeModal()">&times;</button>
+        <h2>Bulk Categorize</h2>
+        <div class="sub">Pick a field and value, then select figures in the gallery below and hit Apply Tag.</div>
+        <div class="field"><label>Field</label>
+          <select id="cat-field" onchange="renderCatValueField()">
+            <option value="IP">IP / Series</option>
+            <option value="Product Type">Product Type</option>
+          </select>
+        </div>
+        <div class="field" id="cat-value-wrap"></div>
+        <div class="modal-actions"><button class="btn btn-primary" onclick="confirmCatValue()">Start Selecting</button></div>
+      </div>
+    </div>`;
+  renderCatValueField();
+}
+function confirmCatValue(){
+  const field = document.getElementById('cat-field').value;
+  const value = document.getElementById('cat-value').value;
+  if(!value){ toast('Pick a value first'); return; }
+  STATE.catField = field; STATE.catValue = value;
+  closeModal();
+  toast(`Now select figures to tag as "${value}" — then hit Apply Tag`);
+}
+function renderCatValueField(){
+  const field = document.getElementById('cat-field').value;
+  const wrap = document.getElementById('cat-value-wrap');
+  if(field === 'IP'){
+    wrap.innerHTML = `<label>IP / Series</label>${ipFieldHtml('cat-value')}`;
+  } else {
+    wrap.innerHTML = `<label>Product Type</label>${productTypeFieldHtml('cat-value')}`;
+  }
+}
+async function applyCategorize(){
+  const ids = Array.from(STATE.catSelected);
+  if(!ids.length){ toast('Select at least one figure'); return; }
+  const field = STATE.catField; const value = STATE.catValue;
+  if(!value){ toast('Pick a value to apply first (use 🏷 Categorize)'); return; }
+  const res = await api('bulkSetCategory', { figureIds: ids, field, value });
+  if(res.ok){
+    toast(`Tagged ${res.updatedCount} figure${res.updatedCount===1?'':'s'} with ${value}`);
+    toggleCategorizeMode();
+    loadData();
+  } else toast(res.error);
 }
 
 function renderTable(rows){
   const tb = document.getElementById('table-body');
-  if(!rows.length){ tb.innerHTML = '<tr><td colspan="9" class="empty">No results</td></tr>'; return; }
-  tb.innerHTML = rows.map(r=>`
+  if(!rows.length){ tb.innerHTML = '<tr><td colspan="11" class="empty">No results</td></tr>'; return; }
+  tb.innerHTML = rows.map((r,idx)=>`
     <tr>
+      <td>${idx+1}</td>
       <td>${r.imageUrl?`<img src="${esc(r.imageUrl)}" onclick="openViewModal('${r.figureId}')" style="cursor:zoom-in">`:''}</td>
       <td>${esc(r.name)}${r.isGroup?' <span class="badge" style="position:static">GB</span>':''}</td>
       <td>${esc(r.seller)}</td>
+      <td>${esc(r.ip||'')}</td>
       <td>${r.isGroup?'Group Buy':'Individual'}</td>
       <td>${esc(r.orderDate)}</td>
-      <td>${r.isGroup?'Allocated ₹'+fmt(r.price):'₹'+fmt(r.price)}</td>
-      <td>${r.paymentStatus==='Paid'?'Paid':'Due ₹'+fmt(r.dueAmount)}</td>
+      <td>₹${fmt(r.totalPrice)}</td>
+      <td>${r.dueAmount>0?'Due ₹'+fmt(r.dueAmount):'Paid'}</td>
       <td><span class="chip ${chipClass(r.delivery)}">${esc(r.delivery)}</span></td>
       <td><button class="btn btn-sm btn-dark" onclick="${r.isGroup?`openGroupModal('${r.groupBuyId}')`:`openEditModal('${r.orderId}')`}">Open</button></td>
     </tr>
@@ -537,6 +729,14 @@ function sellerFieldHtml(id){
   return `<select id="${id}" onchange="if(this.value==='__new__'){const n=prompt('New seller name:'); if(n){const o=document.createElement('option'); o.value=n;o.textContent=n;o.selected=true; this.insertBefore(o, this.lastElementChild);} else {this.value='';}}">
     <option value="">Select seller…</option>${sellerOptions()}</select>`;
 }
+function ipFieldHtml(id, selected){
+  const opts = ipOptionsList();
+  return `<select id="${id}" onchange="if(this.value==='__new__'){const n=prompt('New IP / series name:'); if(n){const o=document.createElement('option');o.value=n;o.textContent=n;o.selected=true;this.insertBefore(o,this.lastElementChild);} else {this.value='';}}">
+    <option value="">Select IP…</option>${opts.map(v=>`<option value="${esc(v)}" ${v===selected?'selected':''}>${esc(v)}</option>`).join('')}<option value="__new__">+ Add New IP</option></select>`;
+}
+function productTypeFieldHtml(id, selected){
+  return `<select id="${id}"><option value="">Select Type…</option>${PRODUCT_TYPE_OPTIONS.map(v=>`<option value="${esc(v)}" ${v===selected?'selected':''}>${esc(v)}</option>`).join('')}</select>`;
+}
 
 function toggleAddType(){
   const type = document.getElementById('add-type').value;
@@ -554,11 +754,15 @@ function toggleAddType(){
       </div>
       <div class="row2">
         <div class="field"><label>Due Amount</label><input id="f-due" class="readonly" readonly value="0"></div>
-        <div class="field"><label>Delivery Status</label><select id="f-delivery"><option>Ordered</option><option>In transit</option><option>Delivered</option></select></div>
+        <div class="field"><label>Delivery Status</label><select id="f-delivery-status"><option>Ordered</option><option>In transit</option><option>Delivered</option></select></div>
       </div>
       <div class="row2">
         <div class="field"><label>Delivery Date (optional)</label><input type="date" id="f-ddate"></div>
         <div class="field"><label>Image</label>${imagePickerHtml('f-image')}</div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>IP / Series</label>${ipFieldHtml('f-ip')}</div>
+        <div class="field"><label>Product Type</label>${productTypeFieldHtml('f-producttype')}</div>
       </div>
       <div class="field"><label>Notes</label><textarea id="f-notes" rows="2"></textarea></div>
     `;
@@ -602,6 +806,10 @@ function addFigureRow(){
     <div class="row2">
       <div class="field"><label>Image</label>${imagePickerHtml('gb-fig-image-'+idx)}</div>
       <div class="field"><label>Allocated Price (₹)</label><input type="number" class="gb-fig-price" ${document.getElementById('gb-equal') && document.getElementById('gb-equal').checked ? 'readonly' : ''}></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>IP / Series</label>${ipFieldHtml('gb-fig-ip-'+idx)}</div>
+      <div class="field"><label>Product Type</label>${productTypeFieldHtml('gb-fig-type-'+idx)}</div>
     </div>`;
   document.getElementById('gb-figures').appendChild(div);
   renderFigureRows();
@@ -763,10 +971,11 @@ async function submitAdd(){
       orderDate: document.getElementById('f-date').value,
       totalPrice: Number(document.getElementById('f-total').value||0),
       paidAmount: Number(document.getElementById('f-paid').value||0),
-      deliveryStatus: document.getElementById('f-delivery').value,
+      deliveryStatus: document.getElementById('f-delivery-status').value,
       deliveryDate: document.getElementById('f-ddate').value,
       notes: document.getElementById('f-notes').value,
-      imageUrl: img?img.url:'', driveFileId: img?img.fileId:''
+      imageUrl: img?img.url:'', driveFileId: img?img.fileId:'',
+      ip: document.getElementById('f-ip').value, productType: document.getElementById('f-producttype').value
     };
     const res = await api('createOrder', payload);
     if(res.ok){ toast('Order added'); closeModal(); loadData(); } else toast(res.error);
@@ -782,9 +991,12 @@ async function submitAdd(){
       const fname = row.querySelector('.gb-fig-name').value.trim();
       if(!fname) continue;
       const img = await uploadImageIfAny('gb-fig-image-'+row.dataset.idx);
+      const ipEl = document.getElementById('gb-fig-ip-'+row.dataset.idx);
+      const typeEl = document.getElementById('gb-fig-type-'+row.dataset.idx);
       figures.push({
         name: fname, allocatedPrice: Number(row.querySelector('.gb-fig-price').value||0),
-        imageUrl: img?img.url:'', driveFileId: img?img.fileId:''
+        imageUrl: img?img.url:'', driveFileId: img?img.fileId:'',
+        ip: ipEl?ipEl.value:'', productType: typeEl?typeEl.value:''
       });
     }
     if(!figures.length){ toast('Add at least one named figure'); return; }
@@ -856,6 +1068,10 @@ function openEditModal(orderId){
           <div class="field"><label>Due Amount</label><input id="e-due" class="readonly" readonly value="${fmt(o['Due Amount'])}"></div>
           <div class="field"><label>Delivery Status</label><select id="e-delivery">${['Ordered','In transit','Delivered'].map(s=>`<option ${s===o['Delivery Status']?'selected':''}>${s}</option>`).join('')}</select></div>
         </div>
+        <div class="row2">
+          <div class="field"><label>IP / Series</label>${ipFieldHtml('e-ip', fig['IP'])}</div>
+          <div class="field"><label>Product Type</label>${productTypeFieldHtml('e-producttype', fig['Product Type'])}</div>
+        </div>
         <div class="field"><label>Replace Image</label>${imagePickerHtml('e-image')}</div>
         <div class="field"><label>Notes</label><textarea id="e-notes" rows="2">${esc(o['Notes'])}</textarea></div>
         <div class="modal-actions">
@@ -880,7 +1096,8 @@ async function submitEdit(orderId){
     totalPrice: Number(document.getElementById('e-total').value||0),
     paidAmount: Number(document.getElementById('e-paid').value||0),
     deliveryStatus: document.getElementById('e-delivery').value,
-    notes: document.getElementById('e-notes').value
+    notes: document.getElementById('e-notes').value,
+    ip: document.getElementById('e-ip').value, productType: document.getElementById('e-producttype').value
   };
   if(img){ payload.imageUrl = img.url; payload.driveFileId = img.fileId; }
   const res = await api('updateOrder', payload);
@@ -1016,6 +1233,10 @@ function openFigureEditModal(figureId){
         <div class="field"><label>Figurine Name</label><input id="fe-name" value="${esc(f['Figurine Name'])}"></div>
         <div class="field"><label>Allocated Price (₹)</label><input type="number" id="fe-price" value="${f['Allocated Price']}"></div>
         <div class="field"><label>Delivery Status</label><select id="fe-delivery">${['Ordered','In transit','Delivered'].map(s=>`<option ${s===f['Delivery Status']?'selected':''}>${s}</option>`).join('')}</select></div>
+        <div class="row2">
+          <div class="field"><label>IP / Series</label>${ipFieldHtml('fe-ip', f['IP'])}</div>
+          <div class="field"><label>Product Type</label>${productTypeFieldHtml('fe-producttype', f['Product Type'])}</div>
+        </div>
         <div class="field"><label>Replace Image</label>${imagePickerHtml('fe-image')}</div>
         <div class="modal-actions"><button class="btn btn-ghost" onclick="openGroupModal('${STATE.orders.find(o=>o['Order ID']===f['Order ID'])['Group Buy ID']}')">Back</button><button class="btn btn-primary" onclick="submitFigureEdit('${figureId}')">Save</button></div>
       </div>
@@ -1026,7 +1247,8 @@ async function submitFigureEdit(figureId){
   const payload = {
     figureId, figurineName: document.getElementById('fe-name').value.trim(),
     allocatedPrice: Number(document.getElementById('fe-price').value||0),
-    deliveryStatus: document.getElementById('fe-delivery').value
+    deliveryStatus: document.getElementById('fe-delivery').value,
+    ip: document.getElementById('fe-ip').value, productType: document.getElementById('fe-producttype').value
   };
   if(img){ payload.imageUrl = img.url; payload.driveFileId = img.fileId; }
   const res = await api('updateFigure', payload);
