@@ -1,0 +1,1164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Figure Vault — Order Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1b1a1f; --charcoal:#232228; --charcoal-2:#2c2b32;
+  --off-white:#f7f2ea; --paper:#fffaf2; --line:#e7ddcb;
+  --accent:#e8452c; --accent-2:#f7b733; --accent-3:#2fb6a3;
+  --ok:#2fae63; --warn:#e0a92b; --danger:#e8452c;
+  --text-dim:#6f6a63; --shadow: 0 10px 30px rgba(20,18,15,.12);
+  --radius:14px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--off-white);color:var(--ink);font-family:Inter,system-ui,sans-serif;
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(27,26,31,.05) 1px, transparent 0);
+  background-size:14px 14px;}
+h1,h2,h3,.display{font-family:'Bebas Neue',Inter,sans-serif;letter-spacing:.02em;}
+.hidden{display:none!important}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit}
+
+/* ===== Login ===== */
+#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:
+  linear-gradient(160deg,var(--charcoal),var(--ink));}
+.login-card{background:var(--paper);border-radius:var(--radius);padding:40px 36px;width:340px;box-shadow:var(--shadow);text-align:center;}
+.login-card h1{font-size:2.6rem;margin:0 0 4px;color:var(--accent);}
+.login-card p{color:var(--text-dim);margin:0 0 24px;font-size:.9rem}
+.login-card input{width:100%;padding:12px 14px;border:2px solid var(--line);border-radius:10px;font-size:1rem;margin-bottom:12px;}
+.login-card .cfg{font-size:.75rem;color:var(--text-dim);text-align:left;margin-top:18px;border-top:1px dashed var(--line);padding-top:14px;}
+.login-card .cfg input{margin-top:6px;font-size:.78rem;padding:8px 10px;}
+.err{color:var(--danger);font-size:.85rem;min-height:1.2em;margin-bottom:8px;}
+
+/* ===== App shell ===== */
+#app{min-height:100vh}
+header.top{background:var(--charcoal);color:var(--off-white);padding:18px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20;box-shadow:var(--shadow);}
+header.top .brand{display:flex;align-items:center;gap:10px}
+header.top .brand .dot{width:12px;height:12px;background:var(--accent);border-radius:50%;box-shadow:0 0 0 4px rgba(232,69,44,.25)}
+header.top h1{font-size:1.7rem;margin:0;color:var(--off-white)}
+header.top .actions{display:flex;gap:10px;align-items:center}
+.btn{border:none;border-radius:10px;padding:10px 16px;font-weight:700;font-size:.85rem;transition:.15s}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#cf3a24}
+.btn-ghost{background:transparent;color:var(--off-white);border:1px solid rgba(255,255,255,.25)}
+.btn-ghost:hover{background:rgba(255,255,255,.08)}
+/* .btn-ghost is styled for the dark header — on a light modal/select-bar background it needs dark text instead */
+.modal .btn-ghost{color:var(--ink);border:1px solid var(--line)}
+.modal .btn-ghost:hover{background:#f1ede4}
+.btn-dark{background:var(--ink);color:#fff}
+.btn-sm{padding:6px 10px;font-size:.75rem;border-radius:8px}
+
+main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
+
+/* ===== Dashboard ===== */
+.dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:28px}
+.stat-card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.stat-card .label{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);font-weight:700}
+.stat-card .value{font-family:'Bebas Neue';font-size:2rem;margin-top:4px}
+.stat-card.accent .value{color:var(--accent)}
+.stat-card.ok .value{color:var(--ok)}
+.stat-card.warn .value{color:var(--warn)}
+
+/* ===== Toolbar ===== */
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:18px;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;box-shadow:var(--shadow)}
+.toolbar select, .toolbar input[type=text]{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:.85rem;background:#fff}
+.toolbar .search{flex:1;min-width:180px}
+.view-toggle{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-left:auto}
+.view-toggle button{background:#fff;border:none;padding:8px 14px;font-size:.85rem;font-weight:600;color:var(--text-dim)}
+.view-toggle button.active{background:var(--ink);color:#fff}
+
+/* ===== Gallery ===== */
+#gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px}
+.card{background:var(--paper);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--line);position:relative;transition:.15s;cursor:pointer}
+.card:hover{transform:translateY(-3px)}
+.card .img-wrap{aspect-ratio:1/1;background:linear-gradient(135deg,#eee,#ddd);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+.card .img-wrap img{width:100%;height:100%;object-fit:cover}
+.card .img-wrap .ph{font-family:'Bebas Neue';color:#b8b2a4;font-size:1.1rem}
+.badge{position:absolute;top:8px;left:8px;background:var(--accent-2);color:var(--ink);font-size:.65rem;font-weight:800;padding:3px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:.03em}
+.card .body{padding:12px 14px}
+.card h3{margin:0 0 4px;font-size:1rem;font-family:Inter;font-weight:700}
+.card .meta{font-size:.78rem;color:var(--text-dim);margin-bottom:8px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:.68rem;font-weight:800;padding:3px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.03em}
+.chip.paid{background:#dff4e6;color:var(--ok)}
+.chip.pending{background:#fdecd8;color:#b5730f}
+.chip.delivered{background:#dff4e6;color:var(--ok)}
+.chip.shipped,.chip.intransit{background:#e3ecfb;color:#2f5fb6}
+.chip.ordered{background:#eee;color:#555}
+.chip.cancelled{background:#fbe1e1;color:var(--danger)}
+
+/* ===== Table ===== */
+.table-wrap{overflow-x:auto;background:var(--paper);border-radius:var(--radius);border:1px solid var(--line);box-shadow:var(--shadow)}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{background:var(--charcoal);color:var(--off-white);font-size:.72rem;text-transform:uppercase;letter-spacing:.04em}
+tr:hover td{background:#fbf6ec}
+td img{width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:middle}
+
+/* ===== Modal ===== */
+.overlay{position:fixed;inset:0;background:rgba(20,18,15,.55);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;z-index:50}
+.modal{background:var(--paper);border-radius:var(--radius);max-width:640px;width:100%;box-shadow:var(--shadow);padding:24px 26px 28px}
+.modal h2{margin:0 0 4px;font-size:1.8rem}
+.modal .sub{color:var(--text-dim);font-size:.85rem;margin-bottom:18px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-dim);margin-bottom:5px}
+.field input, .field select, .field textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-size:.9rem}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.figure-row{border:1px dashed var(--line);border-radius:10px;padding:12px;margin-bottom:10px;position:relative;background:#fffdf8}
+.figure-row .rm{position:absolute;top:8px;right:8px;background:none;border:none;color:var(--danger);font-weight:800}
+.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
+.toggle{display:flex;align-items:center;gap:8px;font-size:.85rem;font-weight:600}
+.readonly{background:#f1ede4;color:var(--text-dim)}
+.close-x{position:absolute;top:14px;right:16px;background:none;border:none;font-size:1.4rem;color:var(--text-dim)}
+.gb-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:.85rem}
+.gb-table th,.gb-table td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}
+.thumb-strip{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.thumb-strip img{width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.loading{padding:60px;text-align:center;color:var(--text-dim)}
+.empty{padding:60px;text-align:center;color:var(--text-dim)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 20px;border-radius:10px;font-size:.85rem;z-index:100;box-shadow:var(--shadow)}
+
+/* ===== Image picker ===== */
+.img-picker{border:2px dashed var(--line);border-radius:10px;aspect-ratio:1/1;max-width:160px;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:text;background:#fffdf8;outline:none;transition:.15s}
+.img-picker.picker-focused{border-color:var(--accent);border-style:solid;background:#fff5f0;box-shadow:0 0 0 3px rgba(232,69,44,.15)}
+.img-picker .ph-txt{font-size:.72rem;color:var(--text-dim);text-align:center;padding:8px}
+.img-picker img{width:100%;height:100%;object-fit:cover}
+.img-picker-wrap{display:flex;flex-direction:column;gap:6px;max-width:160px}
+.img-picker-browse{width:100%}
+.img-picker-hint{font-size:.68rem;color:var(--text-dim)}
+.adjust-stage{display:flex;justify-content:center;margin:14px 0}
+.adjust-stage canvas{border-radius:12px;cursor:grab;touch-action:none;background:#eee}
+.adjust-controls{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:6px}
+.adjust-controls input[type=range]{width:140px}
+.view-figure-img{width:100%;max-height:360px;object-fit:contain;border-radius:12px;margin:10px 0;background:#eee;cursor:zoom-in}
+
+/* ===== Settings menu ===== */
+.settings-menu{position:absolute;top:calc(100% + 8px);right:0;background:var(--paper);color:var(--ink);border-radius:12px;box-shadow:var(--shadow);padding:14px;width:260px;z-index:30;text-align:left}
+.settings-menu-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--text-dim);font-weight:700;margin-bottom:6px}
+.settings-menu input{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:.8rem}
+.settings-menu-divider{height:1px;background:var(--line);margin:12px 0}
+.btn-ghost-dark{background:transparent;color:var(--danger);border:1px solid var(--line)}
+.btn-ghost-dark:hover{background:#fbe1e1}
+
+/* ===== Selection mode (group existing figures into a bundle) ===== */
+.card.selected-card{outline:3px solid var(--accent);outline-offset:-3px}
+.card-checkbox{position:absolute;top:8px;right:8px;width:22px;height:22px;z-index:5;accent-color:var(--accent)}
+#btn-group-mode.active-mode{background:var(--accent);color:#fff;border-color:var(--accent)}
+.select-bar{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;
+  padding:12px 16px;border-radius:12px;display:flex;align-items:center;gap:14px;box-shadow:var(--shadow);z-index:40;font-size:.85rem}
+.select-bar .btn{padding:8px 14px;font-size:.8rem}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <h1>FIGURE VAULT</h1>
+    <p>Order &amp; collection tracker</p>
+    <div class="err" id="login-err"></div>
+    <input type="password" id="login-password" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn btn-primary" style="width:100%" onclick="doLogin()">Enter</button>
+    <div class="cfg" id="login-cfg-section">
+      <div>Apps Script Web App URL</div>
+      <input type="text" id="cfg-api-url" placeholder="https://script.google.com/macros/s/xxx/exec">
+      <button class="btn btn-sm btn-dark" style="margin-top:8px" onclick="saveApiUrl()">Save URL</button>
+    </div>
+    <div class="cfg" id="login-cfg-locked" style="display:none">Backend URL is configured. Log in, then use Settings to change it.</div>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <header class="top">
+    <div class="brand"><span class="dot"></span><h1>FIGURE VAULT</h1></div>
+    <div class="actions" style="position:relative">
+      <button class="btn btn-primary" onclick="openAddModal()">+ Add Order</button>
+      <button class="btn btn-ghost" id="settings-btn" onclick="toggleSettingsMenu()">⚙ Settings</button>
+      <div id="settings-menu" class="settings-menu hidden">
+        <div class="settings-menu-label">Apps Script Web App URL</div>
+        <input type="text" id="settings-api-url" placeholder="https://script.google.com/macros/s/xxx/exec">
+        <button class="btn btn-sm btn-dark" style="width:100%;margin-top:6px" onclick="saveApiUrlFromSettings()">Save URL</button>
+        <div class="settings-menu-divider"></div>
+        <button class="btn btn-sm btn-ghost-dark" style="width:100%" onclick="logout()">Log out</button>
+      </div>
+    </div>
+  </header>
+  <main>
+    <div class="dash-grid" id="dashboard"></div>
+
+    <div class="toolbar">
+      <input class="search" type="text" id="f-search" placeholder="Search figurine, seller, group buy..." oninput="render()">
+      <select id="f-seller" onchange="render()"><option value="">All Sellers</option></select>
+      <select id="f-delivery" onchange="render()">
+        <option value="">All Delivery</option><option>Ordered</option><option>In transit</option><option>Delivered</option>
+      </select>
+      <select id="f-payment" onchange="render()"><option value="">All Payment</option><option value="Paid">Paid</option><option value="Payment Pending">Payment Pending</option></select>
+      <select id="f-type" onchange="render()"><option value="">All Types</option><option value="Individual Figure">Individual</option><option value="Group Buy / Bundle">Group Buy</option></select>
+      <select id="f-sort" onchange="render()">
+        <option value="date-desc">Newest First</option><option value="date-asc">Oldest First</option>
+        <option value="price-desc">Price: High-Low</option><option value="price-asc">Price: Low-High</option>
+        <option value="due-desc">Outstanding: High First</option>
+      </select>
+      <button class="btn btn-sm btn-dark" id="btn-group-mode" onclick="toggleSelectMode()">🔗 Group Figures</button>
+      <button class="btn btn-sm btn-dark" onclick="openBundlesListModal()">📦 Edit Bundles</button>
+      <div class="view-toggle">
+        <button id="btn-gallery" class="active" onclick="setView('gallery')">▦ Gallery</button>
+        <button id="btn-table" onclick="setView('table')">≡ Table</button>
+      </div>
+    </div>
+
+    <div id="gallery"></div>
+    <div id="select-bar" class="select-bar hidden">
+      <span id="select-count">0 selected</span>
+      <button class="btn btn-primary" onclick="openGroupSelectedModal()">Group Into Bundle</button>
+      <button class="btn btn-ghost" onclick="toggleSelectMode()">Cancel</button>
+    </div>
+    <div id="table-wrap" class="table-wrap hidden">
+      <table>
+        <thead><tr><th>Image</th><th>Figurine</th><th>Seller</th><th>Type</th><th>Order Date</th><th>Price</th><th>Paid/Due</th><th>Delivery</th><th>Actions</th></tr></thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<div id="modal-root"></div>
+
+<script>
+/* ===================== Config & Auth ===================== */
+const LS = {
+  apiUrl: 'afv_api_url', token: 'afv_token', view: 'afv_view'
+};
+function getApiUrl(){ return localStorage.getItem(LS.apiUrl) || ''; }
+function saveApiUrl(){
+  const v = document.getElementById('cfg-api-url').value.trim();
+  if(!v){ toast('Enter the Web app URL first'); return; }
+  localStorage.setItem(LS.apiUrl, v);
+  toast('API URL saved');
+  updateLoginCfgVisibility();
+}
+function updateLoginCfgVisibility(){
+  const locked = !!getApiUrl();
+  document.getElementById('login-cfg-section').style.display = locked ? 'none' : '';
+  document.getElementById('login-cfg-locked').style.display = locked ? '' : 'none';
+}
+updateLoginCfgVisibility();
+
+/* ---- Settings menu (post-login): change API URL, log out ---- */
+function toggleSettingsMenu(){
+  const menu = document.getElementById('settings-menu');
+  const opening = menu.classList.contains('hidden');
+  menu.classList.toggle('hidden');
+  if(opening) document.getElementById('settings-api-url').value = getApiUrl();
+}
+document.addEventListener('click', function(e){
+  const menu = document.getElementById('settings-menu');
+  if(!menu || menu.classList.contains('hidden')) return;
+  if(!menu.contains(e.target) && e.target.id !== 'settings-btn'){
+    menu.classList.add('hidden');
+  }
+});
+function saveApiUrlFromSettings(){
+  const v = document.getElementById('settings-api-url').value.trim();
+  if(!v){ toast('Enter the Web app URL first'); return; }
+  localStorage.setItem(LS.apiUrl, v);
+  toast('Backend URL updated');
+  document.getElementById('settings-menu').classList.add('hidden');
+  loadData();
+}
+
+async function api(action, payload, method){
+  const url = getApiUrl();
+  if(!url){ toast('Set the Apps Script Web App URL first'); throw new Error('no api url'); }
+  const token = localStorage.getItem(LS.token) || '';
+  if(method === 'GET' || (!method && action==='getAll' && false)){
+    const res = await fetch(url + '?action=' + encodeURIComponent(action) + '&token=' + encodeURIComponent(token));
+    return res.json();
+  }
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {'Content-Type':'text/plain;charset=utf-8'}, // avoids CORS preflight against Apps Script
+    body: JSON.stringify({ action, token, payload })
+  });
+  return res.json();
+}
+
+async function doLogin(){
+  const pw = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-err');
+  errEl.textContent = '';
+  if(!getApiUrl()){ errEl.textContent = 'Set the Apps Script URL below first.'; return; }
+  try{
+    const res = await fetch(getApiUrl(), {
+      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action:'login', password: pw })
+    });
+    const data = await res.json();
+    if(data.ok){
+      localStorage.setItem(LS.token, data.token);
+      showApp();
+    } else {
+      errEl.textContent = data.error || 'Invalid password';
+    }
+  }catch(e){ errEl.textContent = 'Could not reach the backend. Check the API URL.'; }
+}
+function logout(){ localStorage.removeItem(LS.token); location.reload(); }
+
+async function showApp(){
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  await loadData();
+}
+
+/* ===================== Data ===================== */
+let STATE = { orders: [], figures: [], sellers: [], view: localStorage.getItem(LS.view) || 'gallery', selectMode: false, selected: new Set() };
+
+async function loadData(){
+  document.getElementById('gallery').innerHTML = '<div class="loading">Loading your collection…</div>';
+  const data = await api('getAll');
+  if(!data.ok){ toast(data.error || 'Failed to load'); if(data.error==='Unauthorized'){ localStorage.removeItem(LS.token); location.reload(); } return; }
+  STATE.orders = data.orders || [];
+  STATE.figures = data.figures || [];
+  STATE.sellers = data.sellers || [];
+  populateSellerFilter();
+  render();
+}
+
+function populateSellerFilter(){
+  const sel = document.getElementById('f-seller');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">All Sellers</option>' +
+    STATE.sellers.map(s=>`<option value="${esc(s['Seller Name'])}">${esc(s['Seller Name'])}</option>`).join('');
+  sel.value = current;
+}
+
+/* ===================== Derived rows ===================== */
+function ordersById(){
+  const m = {}; STATE.orders.forEach(o=>m[o['Order ID']]=o); return m;
+}
+function figuresByOrder(){
+  const m = {}; STATE.figures.forEach(f=>{ (m[f['Order ID']] = m[f['Order ID']] || []).push(f); }); return m;
+}
+
+/* one card per FIGURE, carrying its parent order's info */
+function buildCards(){
+  const om = ordersById();
+  return STATE.figures.map(f=>{
+    const o = om[f['Order ID']] || {};
+    const isGroup = o['Purchase Type'] === 'Group Buy / Bundle';
+    return {
+      figureId: f['Figure ID'], orderId: f['Order ID'], name: f['Figurine Name'],
+      seller: o['Seller'] || f['Seller'], price: Number(f['Allocated Price']||0),
+      orderDate: o['Order Date']||'', delivery: f['Delivery Status'] || o['Delivery Status'] || 'Ordered',
+      paymentStatus: o['Payment Status'] || 'Payment Pending', isGroup, groupBuyName: o['Group Buy Name'],
+      groupBuyId: o['Group Buy ID'], imageUrl: f['Image URL'], purchaseType: o['Purchase Type'],
+      dueAmount: Number(o['Due Amount']||0)
+    };
+  });
+}
+
+function filteredSorted(){
+  let rows = buildCards();
+  const q = document.getElementById('f-search').value.trim().toLowerCase();
+  const seller = document.getElementById('f-seller').value;
+  const delivery = document.getElementById('f-delivery').value;
+  const payment = document.getElementById('f-payment').value;
+  const type = document.getElementById('f-type').value;
+  const sort = document.getElementById('f-sort').value;
+  if(q) rows = rows.filter(r => (r.name||'').toLowerCase().includes(q) || (r.seller||'').toLowerCase().includes(q) || (r.groupBuyName||'').toLowerCase().includes(q));
+  if(seller) rows = rows.filter(r=>r.seller===seller);
+  if(delivery) rows = rows.filter(r=>r.delivery===delivery);
+  if(payment) rows = rows.filter(r=>r.paymentStatus===payment);
+  if(type) rows = rows.filter(r=>r.purchaseType===type);
+  rows.sort((a,b)=>{
+    if(sort==='price-desc') return b.price-a.price;
+    if(sort==='price-asc') return a.price-b.price;
+    if(sort==='due-desc') return b.dueAmount-a.dueAmount;
+    if(sort==='date-asc') return (a.orderDate||'').localeCompare(b.orderDate||'');
+    return (b.orderDate||'').localeCompare(a.orderDate||'');
+  });
+  return rows;
+}
+
+/* ===================== Dashboard ===================== */
+function renderDashboard(){
+  const orders = STATE.orders;
+  const figures = STATE.figures;
+  const totalFigures = figures.length;
+  const totalOrders = orders.length;
+  const groupBuys = orders.filter(o=>o['Purchase Type']==='Group Buy / Bundle').length;
+  const delivered = figures.filter(f=>(f['Delivery Status']||'')==='Delivered').length;
+  const awaiting = totalFigures - delivered;
+  const fullyPaid = orders.filter(o=>o['Payment Status']==='Paid').length;
+  const outstanding = orders.reduce((s,o)=>s+Number(o['Due Amount']||0),0);
+  const collectionValue = orders.reduce((s,o)=>s+Number(o['Total Price']||0),0);
+  const stats = [
+    ['Total Figures', totalFigures, ''], ['Total Orders', totalOrders, ''],
+    ['Group Buys', groupBuys, ''], ['Awaiting Delivery', awaiting, 'warn'],
+    ['Delivered', delivered, 'ok'], ['Fully Paid Orders', fullyPaid, 'ok'],
+    ['Outstanding', '₹'+fmt(outstanding), 'accent'], ['Collection Value', '₹'+fmt(collectionValue), 'accent']
+  ];
+  document.getElementById('dashboard').innerHTML = stats.map(s=>`
+    <div class="stat-card ${s[2]}"><div class="label">${s[0]}</div><div class="value">${s[1]}</div></div>
+  `).join('');
+}
+
+/* ===================== Render list ===================== */
+function chipClass(v){ return (v||'').toLowerCase().replace(/\s+/g,''); }
+function fmt(n){ return Number(n||0).toLocaleString('en-IN'); }
+function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function render(){
+  renderDashboard();
+  updateSelectBar();
+  const rows = filteredSorted();
+  if(STATE.view==='gallery'){
+    document.getElementById('gallery').classList.remove('hidden');
+    document.getElementById('table-wrap').classList.add('hidden');
+    renderGallery(rows);
+  } else {
+    document.getElementById('gallery').classList.add('hidden');
+    document.getElementById('table-wrap').classList.remove('hidden');
+    renderTable(rows);
+  }
+}
+
+function renderGallery(rows){
+  const el = document.getElementById('gallery');
+  if(!rows.length){ el.innerHTML = '<div class="empty">No figures match your filters yet.</div>'; return; }
+  el.innerHTML = rows.map(r=>{
+    const selectable = STATE.selectMode && !r.isGroup;
+    const checked = STATE.selected.has(r.figureId);
+    const cardClick = STATE.selectMode
+      ? (selectable ? `toggleSelectFigure('${r.figureId}')` : '')
+      : (r.isGroup ? `openGroupModal('${r.groupBuyId}')` : `openEditModal('${r.orderId}')`);
+    const imgClick = STATE.selectMode ? (selectable ? `toggleSelectFigure('${r.figureId}')` : '') : `event.stopPropagation(); openViewModal('${r.figureId}')`;
+    return `
+    <div class="card ${checked?'selected-card':''}" onclick="${cardClick}">
+      <div class="img-wrap" onclick="${imgClick}">
+        ${selectable ? `<input type="checkbox" class="card-checkbox" ${checked?'checked':''} onclick="event.stopPropagation(); toggleSelectFigure('${r.figureId}')">` : ''}
+        ${r.isGroup ? '<span class="badge">GROUP BUY</span>' : ''}
+        ${r.imageUrl ? `<img src="${esc(r.imageUrl)}" loading="lazy">` : '<span class="ph">NO IMAGE</span>'}
+      </div>
+      <div class="body">
+        <h3>${esc(r.name)}</h3>
+        <div class="meta">${esc(r.seller)} ${r.orderDate?'· '+esc(r.orderDate):''}</div>
+        <div class="meta">${r.isGroup ? 'Allocated ₹'+fmt(r.price) : '₹'+fmt(r.price)}</div>
+        <div class="chips">
+          <span class="chip ${r.paymentStatus==='Paid'?'paid':'pending'}">${r.isGroup ? 'GROUP BUY — '+(r.paymentStatus==='Paid'?'PAID':'PARTIALLY PAID') : (r.paymentStatus==='Paid'?'PAID':'PAYMENT PENDING')}</span>
+          <span class="chip ${chipClass(r.delivery)}">${esc(r.delivery)}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleSelectMode(){
+  STATE.selectMode = !STATE.selectMode;
+  if(!STATE.selectMode) STATE.selected = new Set();
+  document.getElementById('btn-group-mode').classList.toggle('active-mode', STATE.selectMode);
+  if(STATE.view !== 'gallery') setView('gallery'); else render();
+}
+function toggleSelectFigure(figureId){
+  if(STATE.selected.has(figureId)) STATE.selected.delete(figureId); else STATE.selected.add(figureId);
+  render();
+}
+function updateSelectBar(){
+  const bar = document.getElementById('select-bar');
+  if(STATE.selectMode && STATE.selected.size > 0){
+    bar.classList.remove('hidden');
+    document.getElementById('select-count').textContent = STATE.selected.size + ' selected';
+  } else {
+    bar.classList.add('hidden');
+  }
+}
+
+function renderTable(rows){
+  const tb = document.getElementById('table-body');
+  if(!rows.length){ tb.innerHTML = '<tr><td colspan="9" class="empty">No results</td></tr>'; return; }
+  tb.innerHTML = rows.map(r=>`
+    <tr>
+      <td>${r.imageUrl?`<img src="${esc(r.imageUrl)}" onclick="openViewModal('${r.figureId}')" style="cursor:zoom-in">`:''}</td>
+      <td>${esc(r.name)}${r.isGroup?' <span class="badge" style="position:static">GB</span>':''}</td>
+      <td>${esc(r.seller)}</td>
+      <td>${r.isGroup?'Group Buy':'Individual'}</td>
+      <td>${esc(r.orderDate)}</td>
+      <td>${r.isGroup?'Allocated ₹'+fmt(r.price):'₹'+fmt(r.price)}</td>
+      <td>${r.paymentStatus==='Paid'?'Paid':'Due ₹'+fmt(r.dueAmount)}</td>
+      <td><span class="chip ${chipClass(r.delivery)}">${esc(r.delivery)}</span></td>
+      <td><button class="btn btn-sm btn-dark" onclick="${r.isGroup?`openGroupModal('${r.groupBuyId}')`:`openEditModal('${r.orderId}')`}">Open</button></td>
+    </tr>
+  `).join('');
+}
+
+function setView(v){
+  STATE.view = v; localStorage.setItem(LS.view, v);
+  document.getElementById('btn-gallery').classList.toggle('active', v==='gallery');
+  document.getElementById('btn-table').classList.toggle('active', v==='table');
+  render();
+}
+setView(STATE.view);
+
+function toast(msg){
+  const t = document.createElement('div'); t.className='toast'; t.textContent = msg;
+  document.body.appendChild(t); setTimeout(()=>t.remove(), 2800);
+}
+
+/* ===================== Modals ===================== */
+const modalRoot = document.getElementById('modal-root');
+function closeModal(){ modalRoot.innerHTML=''; }
+
+function openAddModal(){
+  modalRoot.innerHTML = `
+    <div class="overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <button class="close-x" onclick="closeModal()">&times;</button>
+        <h2>Add Order</h2>
+        <div class="sub">Log a new figure purchase</div>
+        <div class="field"><label>Purchase Type</label>
+          <select id="add-type" onchange="toggleAddType()"><option value="Individual Figure">Individual Figure</option><option value="Group Buy / Bundle">Group Buy / Bundle</option></select>
+        </div>
+        <div id="add-body"></div>
+        <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="submitAdd()">Save Order</button></div>
+      </div>
+    </div>`;
+  toggleAddType();
+}
+
+function sellerOptions(){
+  return STATE.sellers.map(s=>`<option value="${esc(s['Seller Name'])}">${esc(s['Seller Name'])}</option>`).join('') + `<option value="__new__">+ Add New Seller</option>`;
+}
+function sellerFieldHtml(id){
+  return `<select id="${id}" onchange="if(this.value==='__new__'){const n=prompt('New seller name:'); if(n){const o=document.createElement('option'); o.value=n;o.textContent=n;o.selected=true; this.insertBefore(o, this.lastElementChild);} else {this.value='';}}">
+    <option value="">Select seller…</option>${sellerOptions()}</select>`;
+}
+
+function toggleAddType(){
+  const type = document.getElementById('add-type').value;
+  const body = document.getElementById('add-body');
+  if(type === 'Individual Figure'){
+    body.innerHTML = `
+      <div class="field"><label>Figurine Name</label><input id="f-name"></div>
+      <div class="row2">
+        <div class="field"><label>Seller</label>${sellerFieldHtml('f-seller-in')}</div>
+        <div class="field"><label>Order Date</label><input type="date" id="f-date"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Total Price (₹)</label><input type="number" id="f-total" oninput="calcDue()"></div>
+        <div class="field"><label>Paid Amount (₹)</label><input type="number" id="f-paid" oninput="calcDue()"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Due Amount</label><input id="f-due" class="readonly" readonly value="0"></div>
+        <div class="field"><label>Delivery Status</label><select id="f-delivery"><option>Ordered</option><option>In transit</option><option>Delivered</option></select></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Delivery Date (optional)</label><input type="date" id="f-ddate"></div>
+        <div class="field"><label>Image</label>${imagePickerHtml('f-image')}</div>
+      </div>
+      <div class="field"><label>Notes</label><textarea id="f-notes" rows="2"></textarea></div>
+    `;
+  } else {
+    body.innerHTML = `
+      <div class="field"><label>Group Buy / Bundle Name</label><input id="gb-name" placeholder="e.g. Dragon Ball Set – August 2026"></div>
+      <div class="row2">
+        <div class="field"><label>Seller</label>${sellerFieldHtml('gb-seller')}</div>
+        <div class="field"><label>Order Date</label><input type="date" id="gb-date"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Bundle Total Price (₹)</label><input type="number" id="gb-total" oninput="calcDue(true)"></div>
+        <div class="field"><label>Total Amount Paid (₹)</label><input type="number" id="gb-paid" oninput="calcDue(true)"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Due Amount</label><input id="gb-due" class="readonly" readonly value="0"></div>
+        <div class="field"><label>Bundle Delivery Status</label><select id="gb-delivery"><option>Ordered</option><option>In transit</option><option>Delivered</option></select></div>
+      </div>
+      <div class="toggle"><input type="checkbox" id="gb-equal" checked onchange="renderFigureRows()"> Split bundle equally</div>
+      <div id="gb-figures" style="margin-top:12px"></div>
+      <button class="btn btn-sm btn-dark" onclick="addFigureRow()">+ Add Figure</button>
+      <div class="field" style="margin-top:12px"><label>Notes</label><textarea id="gb-notes" rows="2"></textarea></div>
+    `;
+    window.gbFigureCount = 0; addFigureRow(); addFigureRow();
+  }
+}
+function calcDue(isGroup){
+  const t = Number(document.getElementById(isGroup?'gb-total':'f-total').value||0);
+  const p = Number(document.getElementById(isGroup?'gb-paid':'f-paid').value||0);
+  document.getElementById(isGroup?'gb-due':'f-due').value = fmt(Math.max(t-p,0));
+  if(isGroup) renderFigureRows();
+}
+function addFigureRow(){
+  window.gbFigureCount++;
+  const idx = window.gbFigureCount;
+  const div = document.createElement('div');
+  div.className='figure-row'; div.id='gb-fig-'+idx; div.dataset.idx = idx;
+  div.innerHTML = `
+    <button class="rm" onclick="document.getElementById('gb-fig-${idx}').remove(); renderFigureRows();">✕</button>
+    <div class="field"><label>Figure ${idx} Name</label><input class="gb-fig-name"></div>
+    <div class="row2">
+      <div class="field"><label>Image</label>${imagePickerHtml('gb-fig-image-'+idx)}</div>
+      <div class="field"><label>Allocated Price (₹)</label><input type="number" class="gb-fig-price" ${document.getElementById('gb-equal') && document.getElementById('gb-equal').checked ? 'readonly' : ''}></div>
+    </div>`;
+  document.getElementById('gb-figures').appendChild(div);
+  renderFigureRows();
+}
+function renderFigureRows(){
+  const equal = document.getElementById('gb-equal').checked;
+  const total = Number(document.getElementById('gb-total').value||0);
+  const rows = document.querySelectorAll('.figure-row');
+  const n = rows.length || 1;
+  const base = Math.floor((total/n)*100)/100;
+  rows.forEach((row,i)=>{
+    const priceInput = row.querySelector('.gb-fig-price');
+    priceInput.readOnly = equal;
+    if(equal){
+      let val = base;
+      if(i===rows.length-1) val = Math.round((total - base*(n-1))*100)/100;
+      priceInput.value = val;
+    }
+  });
+}
+
+async function fileToBase64(file){
+  return new Promise((resolve,reject)=>{
+    const r = new FileReader();
+    r.onload = ()=>resolve(r.result);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
+/* ===================== Image picker (file / drag-drop / paste) + adjuster ===================== */
+const pickerFiles = {}; // pickerId -> adjusted Blob ready to upload
+let ACTIVE_PICKER = null;
+
+function imagePickerHtml(id, label){
+  label = label || 'Drop an image, or click here then Ctrl+V to paste';
+  return `<div class="img-picker-wrap">
+    <div class="img-picker" id="${id}" tabindex="0"
+      onfocus="ACTIVE_PICKER='${id}'; this.classList.add('picker-focused')"
+      onblur="this.classList.remove('picker-focused')"
+      ondragover="event.preventDefault()"
+      ondrop="event.preventDefault(); if(event.dataTransfer.files[0]) handlePickerFile('${id}', event.dataTransfer.files[0]);">
+      <span class="ph-txt">${label}</span>
+    </div>
+    <button type="button" class="btn btn-sm btn-dark img-picker-browse" onclick="triggerPickerFile('${id}')">📁 Browse File</button>
+    <input type="file" id="${id}-file" accept="image/*" class="hidden" onchange="handlePickerFile('${id}', this.files[0]); this.value='';">
+  </div>`;
+}
+function triggerPickerFile(id){ ACTIVE_PICKER = id; document.getElementById(id+'-file').click(); }
+function handlePickerFile(id, file){
+  if(!file) return;
+  ACTIVE_PICKER = id;
+  openImageAdjuster(file, function(blob){
+    pickerFiles[id] = blob;
+    const picker = document.getElementById(id);
+    if(picker){ picker.innerHTML = `<img src="${URL.createObjectURL(blob)}">`; }
+  });
+}
+document.addEventListener('paste', function(e){
+  if(!ACTIVE_PICKER) return;
+  const items = (e.clipboardData || window.clipboardData) ? (e.clipboardData || window.clipboardData).items : null;
+  if(!items) return;
+  for(const item of items){
+    if(item.type && item.type.indexOf('image') === 0){
+      const file = item.getAsFile();
+      handlePickerFile(ACTIVE_PICKER, file);
+      e.preventDefault();
+      break;
+    }
+  }
+});
+
+let adjusterState = null;
+function openImageAdjuster(file, onDone){
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const img = new Image();
+    img.onload = function(){
+      adjusterState = { img, rotation: 0, scale: 1, offsetX: 0, offsetY: 0, dragging:false, onDone };
+      showAdjusterUI();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function showAdjusterUI(){
+  const wrap = document.createElement('div');
+  wrap.id = 'adjust-overlay';
+  wrap.className = 'overlay';
+  wrap.style.zIndex = 80;
+  wrap.innerHTML = `
+    <div class="modal" style="max-width:400px;text-align:center">
+      <h2>Adjust Image</h2>
+      <div class="sub">Drag to reposition, use the slider to zoom</div>
+      <div class="adjust-stage"><canvas id="adjust-canvas" width="300" height="300"></canvas></div>
+      <div class="adjust-controls">
+        <button class="btn btn-sm btn-dark" onclick="adjustRotate(-90)">⟲ Rotate</button>
+        <input type="range" id="adjust-zoom" min="1" max="3" step="0.01" value="1" oninput="adjustZoom(this.value)">
+        <button class="btn btn-sm btn-dark" onclick="adjustRotate(90)">⟳ Rotate</button>
+      </div>
+      <div class="modal-actions" style="justify-content:center">
+        <button class="btn btn-ghost" onclick="closeAdjuster()">Cancel</button>
+        <button class="btn btn-primary" onclick="applyAdjuster()">Use Image</button>
+      </div>
+    </div>`;
+  document.body.appendChild(wrap);
+  const canvas = document.getElementById('adjust-canvas');
+  canvas.addEventListener('mousedown', adjustDragStart);
+  window.addEventListener('mousemove', adjustDragMove);
+  window.addEventListener('mouseup', adjustDragEnd);
+  canvas.addEventListener('touchstart', adjustDragStart, {passive:true});
+  window.addEventListener('touchmove', adjustDragMove, {passive:false});
+  window.addEventListener('touchend', adjustDragEnd);
+  drawAdjustCanvas();
+}
+function drawAdjustCanvas(){
+  const canvas = document.getElementById('adjust-canvas'); if(!canvas || !adjusterState) return;
+  const ctx = canvas.getContext('2d');
+  const {img, rotation, scale, offsetX, offsetY} = adjusterState;
+  ctx.clearRect(0,0,300,300);
+  ctx.save();
+  ctx.translate(150+offsetX,150+offsetY);
+  ctx.rotate(rotation*Math.PI/180);
+  const baseScale = Math.max(300/img.width,300/img.height) * scale;
+  ctx.drawImage(img, -img.width*baseScale/2, -img.height*baseScale/2, img.width*baseScale, img.height*baseScale);
+  ctx.restore();
+}
+function adjustRotate(delta){ adjusterState.rotation = (adjusterState.rotation + delta) % 360; drawAdjustCanvas(); }
+function adjustZoom(v){ adjusterState.scale = Number(v); drawAdjustCanvas(); }
+function getAdjustPoint(e){ if(e.touches && e.touches[0]) return {x:e.touches[0].clientX, y:e.touches[0].clientY}; return {x:e.clientX,y:e.clientY}; }
+function adjustDragStart(e){ if(!adjusterState) return; adjusterState.dragging = true; const p = getAdjustPoint(e); adjusterState.lastX=p.x; adjusterState.lastY=p.y; }
+function adjustDragMove(e){ if(!adjusterState || !adjusterState.dragging) return; e.preventDefault(); const p = getAdjustPoint(e); adjusterState.offsetX += p.x - adjusterState.lastX; adjusterState.offsetY += p.y - adjusterState.lastY; adjusterState.lastX=p.x; adjusterState.lastY=p.y; drawAdjustCanvas(); }
+function adjustDragEnd(){ if(adjusterState) adjusterState.dragging=false; }
+function closeAdjuster(){ const el = document.getElementById('adjust-overlay'); if(el) el.remove(); adjusterState = null; }
+function applyAdjuster(){
+  const canvas = document.getElementById('adjust-canvas');
+  canvas.toBlob(function(blob){ const done = adjusterState.onDone; closeAdjuster(); done(blob); }, 'image/jpeg', 0.9);
+}
+
+async function uploadImageIfAny(pickerId){
+  const blob = pickerFiles[pickerId];
+  if(!blob) return null;
+  const b64 = await fileToBase64(blob);
+  const res = await api('uploadImage', { base64Data: b64, mimeType: 'image/jpeg', fileName: pickerId+'.jpg' });
+  if(!res.ok){ toast('Image upload failed: '+res.error); return null; }
+  delete pickerFiles[pickerId];
+  return { url: res.url, fileId: res.fileId };
+}
+
+async function submitAdd(){
+  const type = document.getElementById('add-type').value;
+  if(type === 'Individual Figure'){
+    const seller = document.getElementById('f-seller-in').value;
+    const name = document.getElementById('f-name').value.trim();
+    if(!seller || !name){ toast('Seller and figurine name are required'); return; }
+    const img = await uploadImageIfAny('f-image');
+    const payload = {
+      purchaseType: 'Individual Figure', figurineName: name, seller,
+      orderDate: document.getElementById('f-date').value,
+      totalPrice: Number(document.getElementById('f-total').value||0),
+      paidAmount: Number(document.getElementById('f-paid').value||0),
+      deliveryStatus: document.getElementById('f-delivery').value,
+      deliveryDate: document.getElementById('f-ddate').value,
+      notes: document.getElementById('f-notes').value,
+      imageUrl: img?img.url:'', driveFileId: img?img.fileId:''
+    };
+    const res = await api('createOrder', payload);
+    if(res.ok){ toast('Order added'); closeModal(); loadData(); } else toast(res.error);
+  } else {
+    const seller = document.getElementById('gb-seller').value;
+    const name = document.getElementById('gb-name').value.trim();
+    const total = Number(document.getElementById('gb-total').value||0);
+    if(!seller || !name || !total){ toast('Seller, bundle name and total price are required'); return; }
+    const rows = Array.from(document.querySelectorAll('.figure-row'));
+    if(!rows.length){ toast('Add at least one figure'); return; }
+    const figures = [];
+    for(const row of rows){
+      const fname = row.querySelector('.gb-fig-name').value.trim();
+      if(!fname) continue;
+      const img = await uploadImageIfAny('gb-fig-image-'+row.dataset.idx);
+      figures.push({
+        name: fname, allocatedPrice: Number(row.querySelector('.gb-fig-price').value||0),
+        imageUrl: img?img.url:'', driveFileId: img?img.fileId:''
+      });
+    }
+    if(!figures.length){ toast('Add at least one named figure'); return; }
+    const equal = document.getElementById('gb-equal').checked;
+    if(!equal){
+      const sum = figures.reduce((s,f)=>s+Number(f.allocatedPrice||0),0);
+      if(Math.abs(sum-total) > 0.5){ toast(`Allocated prices (₹${fmt(sum)}) must sum to bundle total (₹${fmt(total)})`); return; }
+    }
+    const payload = {
+      purchaseType: 'Group Buy / Bundle', groupBuyName: name, seller,
+      orderDate: document.getElementById('gb-date').value, totalPrice: total,
+      paidAmount: Number(document.getElementById('gb-paid').value||0),
+      deliveryStatus: document.getElementById('gb-delivery').value,
+      notes: document.getElementById('gb-notes').value,
+      splitEqually: equal, figures
+    };
+    const res = await api('createOrder', payload);
+    if(res.ok){
+      await loadData();
+      showGroupConfirmation(res.groupBuyId, name, res.figureNames || figures.map(f=>f.name), total);
+    } else toast(res.error);
+  }
+}
+
+/* ---- Confirmation after a bundle is created (fresh or grouped from existing) ---- */
+function showGroupConfirmation(groupBuyId, bundleName, figureNames, totalPrice){
+  modalRoot.innerHTML = `
+    <div class="overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal" style="max-width:440px;text-align:center">
+        <button class="close-x" onclick="closeModal()">&times;</button>
+        <div class="chip paid" style="display:inline-block;margin-bottom:10px">BUNDLE CREATED</div>
+        <h2>${esc(bundleName)}</h2>
+        <div class="sub">Group Buy ID: <b>${esc(groupBuyId)}</b></div>
+        <div class="field" style="text-align:left">
+          <label>${figureNames.length} figure${figureNames.length===1?'':'s'} grouped</label>
+          <div style="font-size:.9rem;line-height:1.6">${figureNames.map(n=>esc(n)).join(', ')}</div>
+        </div>
+        <div class="stat-card accent" style="margin-top:10px"><div class="label">Bundle Total</div><div class="value">₹${fmt(totalPrice)}</div></div>
+        <div class="modal-actions" style="justify-content:center">
+          <button class="btn btn-ghost" onclick="closeModal()">Done</button>
+          <button class="btn btn-primary" onclick="openGroupModal('${groupBuyId}')">View Bundle</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ---- Edit individual order ---- */
+function openEditModal(orderId){
+  const o = STATE.orders.find(x=>x['Order ID']===orderId);
+  const fig = STATE.figures.find(x=>x['Order ID']===orderId);
+  if(!o || !fig) return;
+  modalRoot.innerHTML = `
+    <div class="overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <button class="close-x" onclick="closeModal()">&times;</button>
+        <h2>${esc(fig['Figurine Name'])}</h2>
+        <div class="sub">${esc(o['Seller'])} · ${o['Payment Status']==='Paid'?'PAID':'PAYMENT PENDING'}</div>
+        ${fig['Image URL']?`<img src="${esc(fig['Image URL'])}" class="view-figure-img" style="max-height:220px" onclick="openViewModal('${fig['Figure ID']}')">`:''}
+        <div class="field"><label>Figurine Name</label><input id="e-name" value="${esc(fig['Figurine Name'])}"></div>
+        <div class="row2">
+          <div class="field"><label>Seller</label>${sellerFieldHtml('e-seller')}</div>
+          <div class="field"><label>Order Date</label><input type="date" id="e-date" value="${esc(o['Order Date'])}"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Total Price (₹)</label><input type="number" id="e-total" value="${o['Total Price']}" oninput="calcDueEdit()"></div>
+          <div class="field"><label>Paid Amount (₹)</label><input type="number" id="e-paid" value="${o['Paid Amount']}" oninput="calcDueEdit()"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Due Amount</label><input id="e-due" class="readonly" readonly value="${fmt(o['Due Amount'])}"></div>
+          <div class="field"><label>Delivery Status</label><select id="e-delivery">${['Ordered','In transit','Delivered'].map(s=>`<option ${s===o['Delivery Status']?'selected':''}>${s}</option>`).join('')}</select></div>
+        </div>
+        <div class="field"><label>Replace Image</label>${imagePickerHtml('e-image')}</div>
+        <div class="field"><label>Notes</label><textarea id="e-notes" rows="2">${esc(o['Notes'])}</textarea></div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" style="color:var(--danger)" onclick="deleteOrderConfirm('${orderId}')">Delete</button>
+          <button class="btn btn-primary" onclick="submitEdit('${orderId}')">Save Changes</button>
+        </div>
+      </div>
+    </div>`;
+  setTimeout(()=>{ document.getElementById('e-seller').value = o['Seller']; }, 0);
+}
+function calcDueEdit(){
+  const t = Number(document.getElementById('e-total').value||0);
+  const p = Number(document.getElementById('e-paid').value||0);
+  document.getElementById('e-due').value = fmt(Math.max(t-p,0));
+}
+async function submitEdit(orderId){
+  const img = await uploadImageIfAny('e-image');
+  const payload = {
+    orderId, figurineName: document.getElementById('e-name').value.trim(),
+    seller: document.getElementById('e-seller').value,
+    orderDate: document.getElementById('e-date').value,
+    totalPrice: Number(document.getElementById('e-total').value||0),
+    paidAmount: Number(document.getElementById('e-paid').value||0),
+    deliveryStatus: document.getElementById('e-delivery').value,
+    notes: document.getElementById('e-notes').value
+  };
+  if(img){ payload.imageUrl = img.url; payload.driveFileId = img.fileId; }
+  const res = await api('updateOrder', payload);
+  if(res.ok){ toast('Saved'); closeModal(); loadData(); } else toast(res.error);
+}
+async function deleteOrderConfirm(orderId){
+  if(!confirm('Delete this order and its figure(s)? This cannot be undone.')) return;
+  const res = await api('deleteOrder', { orderId });
+  if(res.ok){ toast('Deleted'); closeModal(); loadData(); } else toast(res.error);
+}
+async function ungroupBundleConfirm(orderId){
+  if(!confirm('Split this bundle back into individual figures? The bundle itself is deleted, but every figure stays — each becomes its own individual order with its own price and its share of what was paid.')) return;
+  const res = await api('ungroupBundle', { orderId });
+  if(res.ok){ toast(`Ungrouped ${res.figureCount} figure${res.figureCount===1?'':'s'} — bundle removed`); closeModal(); loadData(); }
+  else toast(res.error);
+}
+async function removeFigureFromBundleConfirm(figureId, groupBuyId){
+  if(!confirm('Remove this figure from the bundle? It becomes its own individual order (keeping its share of what was paid).')) return;
+  const res = await api('removeFromBundle', { figureId });
+  if(res.ok){
+    await loadData();
+    if(res.bundleDissolved){ toast('Removed — the bundle had only one figure left, so it was dissolved too'); closeModal(); }
+    else { toast('Removed from bundle'); openGroupModal(groupBuyId); }
+  } else toast(res.error);
+}
+
+/* ---- Group buy detail ---- */
+/* ---- All group buys — pick one to view/edit ---- */
+function openBundlesListModal(){
+  const bundles = STATE.orders.filter(o=>o['Purchase Type']==='Group Buy / Bundle');
+  modalRoot.innerHTML = `
+    <div class="overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal" style="max-width:680px">
+        <button class="close-x" onclick="closeModal()">&times;</button>
+        <h2>All Group Buys</h2>
+        <div class="sub">${bundles.length} bundle${bundles.length===1?'':'s'}</div>
+        ${bundles.length ? `<div class="table-wrap" style="box-shadow:none"><table class="gb-table">
+          <thead><tr><th>Bundle</th><th>Seller</th><th>Total</th><th>Figures</th><th>Status</th><th></th></tr></thead>
+          <tbody>${bundles.map(o=>{
+            const count = STATE.figures.filter(f=>f['Order ID']===o['Order ID']).length;
+            return `<tr>
+              <td>${esc(o['Group Buy Name'])}<div style="font-size:.7rem;color:var(--text-dim)">${esc(o['Group Buy ID'])}</div></td>
+              <td>${esc(o['Seller'])}</td>
+              <td>₹${fmt(o['Total Price'])}</td>
+              <td>${count}</td>
+              <td><span class="chip ${o['Payment Status']==='Paid'?'paid':'pending'}">${o['Payment Status']==='Paid'?'PAID':'PENDING'}</span> <span class="chip ${chipClass(o['Delivery Status'])}">${esc(o['Delivery Status'])}</span></td>
+              <td style="white-space:nowrap">
+                <button class="btn btn-sm btn-dark" onclick="openGroupModal('${o['Group Buy ID']}')">View</button>
+                <button class="btn btn-sm btn-dark" onclick="openGroupEditModal('${o['Order ID']}')">Edit</button>
+                <button class="btn btn-sm btn-ghost-dark" onclick="ungroupBundleConfirm('${o['Order ID']}')">Ungroup</button>
+              </td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table></div>` : '<div class="empty">No group buys yet — create one with + Add Order, or 🔗 Group Figures.</div>'}
+        <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Close</button></div>
+      </div>
+    </div>`;
+}
+
+function openGroupModal(groupBuyId){
+  const o = STATE.orders.find(x=>x['Group Buy ID']===groupBuyId);
+  const figs = STATE.figures.filter(x=>x['Order ID']===o['Order ID']);
+  const deliveredCount = figs.filter(f=>(f['Delivery Status']||'')==='Delivered').length;
+  const overallDelivery = deliveredCount===figs.length ? 'Delivered' : (deliveredCount>0?'Partially Delivered':o['Delivery Status']);
+  modalRoot.innerHTML = `
+    <div class="overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal" style="max-width:720px">
+        <button class="close-x" onclick="closeModal()">&times;</button>
+        <h2>${esc(o['Group Buy Name'])}</h2>
+        <div class="sub">${esc(o['Group Buy ID'])} · ${esc(o['Seller'])} · Ordered ${esc(o['Order Date'])} · ${figs.length} Figures · <b>${overallDelivery}</b></div>
+        <div class="row2">
+          <div class="stat-card accent"><div class="label">Bundle Total</div><div class="value">₹${fmt(o['Total Price'])}</div></div>
+          <div class="stat-card ok"><div class="label">Paid</div><div class="value">₹${fmt(o['Paid Amount'])}</div></div>
+        </div>
+        <div class="stat-card warn" style="margin-top:10px"><div class="label">Remaining</div><div class="value">₹${fmt(o['Due Amount'])}</div></div>
+        <table class="gb-table">
+          <thead><tr><th>Figure</th><th>Allocated Price</th><th>Delivery</th><th></th></tr></thead>
+          <tbody>${figs.map(f=>`<tr>
+            <td>${esc(f['Figurine Name'])}</td><td>₹${fmt(f['Allocated Price'])}</td>
+            <td><span class="chip ${chipClass(f['Delivery Status'])}">${esc(f['Delivery Status'])}</span></td>
+            <td style="white-space:nowrap">
+              <button class="btn btn-sm btn-dark" onclick="openFigureEditModal('${f['Figure ID']}')">Edit</button>
+              <button class="btn btn-sm btn-ghost-dark" onclick="removeFigureFromBundleConfirm('${f['Figure ID']}','${o['Group Buy ID']}')">Remove</button>
+            </td>
+          </tr>`).join('')}</tbody>
+        </table>
+        <div class="thumb-strip">${figs.filter(f=>f['Image URL']).map(f=>`<img src="${esc(f['Image URL'])}">`).join('')}</div>
+        <div class="modal-actions" style="flex-wrap:wrap">
+          <button class="btn btn-ghost" style="color:var(--danger)" onclick="deleteOrderConfirm('${o['Order ID']}')">Delete Everything</button>
+          <button class="btn btn-ghost-dark" onclick="ungroupBundleConfirm('${o['Order ID']}')">Ungroup (keep figures)</button>
+          <button class="btn btn-primary" onclick="openGroupEditModal('${o['Order ID']}')">Edit Bundle Info</button>
+        </div>
+      </div>
+    </div>`;
+}
+function openGroupEditModal(orderId){
+  const o = STATE.orders.find(x=>x['Order ID']===orderId);
+  modalRoot.innerHTML = `
+    <div class="overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <button class="close-x" onclick="closeModal()">&times;</button>
+        <h2>Edit Bundle</h2>
+        <div class="field"><label>Group Buy Name</label><input id="ge-name" value="${esc(o['Group Buy Name'])}"></div>
+        <div class="row2">
+          <div class="field"><label>Total Price (₹)</label><input type="number" id="ge-total" value="${o['Total Price']}"></div>
+          <div class="field"><label>Paid Amount (₹)</label><input type="number" id="ge-paid" value="${o['Paid Amount']}"></div>
+        </div>
+        <div class="field"><label>Delivery Status</label><select id="ge-delivery">${['Ordered','In transit','Delivered'].map(s=>`<option ${s===o['Delivery Status']?'selected':''}>${s}</option>`).join('')}</select></div>
+        <div class="field"><label>Notes</label><textarea id="ge-notes" rows="2">${esc(o['Notes'])}</textarea></div>
+        <div class="modal-actions"><button class="btn btn-ghost" onclick="openGroupModal('${o['Group Buy ID']}')">Back</button><button class="btn btn-primary" onclick="submitGroupEdit('${orderId}')">Save</button></div>
+      </div>
+    </div>`;
+}
+async function submitGroupEdit(orderId){
+  const payload = {
+    orderId, groupBuyName: document.getElementById('ge-name').value.trim(),
+    totalPrice: Number(document.getElementById('ge-total').value||0),
+    paidAmount: Number(document.getElementById('ge-paid').value||0),
+    deliveryStatus: document.getElementById('ge-delivery').value,
+    notes: document.getElementById('ge-notes').value
+  };
+  const res = await api('updateOrder', payload);
+  if(res.ok){ toast('Saved'); closeModal(); loadData(); } else toast(res.error);
+}
+function openFigureEditModal(figureId){
+  const f = STATE.figures.find(x=>x['Figure ID']===figureId);
+  modalRoot.innerHTML = `
+    <div class="overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <button class="close-x" onclick="closeModal()">&times;</button>
+        <h2>${esc(f['Figurine Name'])}</h2>
+        ${f['Image URL']?`<img src="${esc(f['Image URL'])}" class="view-figure-img" style="max-height:200px" onclick="openViewModal('${f['Figure ID']}')">`:''}
+        <div class="field"><label>Figurine Name</label><input id="fe-name" value="${esc(f['Figurine Name'])}"></div>
+        <div class="field"><label>Allocated Price (₹)</label><input type="number" id="fe-price" value="${f['Allocated Price']}"></div>
+        <div class="field"><label>Delivery Status</label><select id="fe-delivery">${['Ordered','In transit','Delivered'].map(s=>`<option ${s===f['Delivery Status']?'selected':''}>${s}</option>`).join('')}</select></div>
+        <div class="field"><label>Replace Image</label>${imagePickerHtml('fe-image')}</div>
+        <div class="modal-actions"><button class="btn btn-ghost" onclick="openGroupModal('${STATE.orders.find(o=>o['Order ID']===f['Order ID'])['Group Buy ID']}')">Back</button><button class="btn btn-primary" onclick="submitFigureEdit('${figureId}')">Save</button></div>
+      </div>
+    </div>`;
+}
+async function submitFigureEdit(figureId){
+  const img = await uploadImageIfAny('fe-image');
+  const payload = {
+    figureId, figurineName: document.getElementById('fe-name').value.trim(),
+    allocatedPrice: Number(document.getElementById('fe-price').value||0),
+    deliveryStatus: document.getElementById('fe-delivery').value
+  };
+  if(img){ payload.imageUrl = img.url; payload.driveFileId = img.fileId; }
+  const res = await api('updateFigure', payload);
+  if(res.ok){ toast('Saved'); closeModal(); loadData(); } else toast(res.error);
+}
+
+/* ---- Group existing individual figures into a new bundle ---- */
+function openGroupSelectedModal(){
+  const ids = Array.from(STATE.selected);
+  if(ids.length < 2){ toast('Select at least two figures first'); return; }
+  const figs = ids.map(id=>STATE.figures.find(f=>f['Figure ID']===id)).filter(Boolean);
+  const orderIds = Array.from(new Set(figs.map(f=>f['Order ID'])));
+  const orders = orderIds.map(oid=>STATE.orders.find(o=>o['Order ID']===oid)).filter(Boolean);
+  const sumPrice = orders.reduce((s,o)=>s+Number(o['Total Price']||0),0);
+  const sumPaid = orders.reduce((s,o)=>s+Number(o['Paid Amount']||0),0);
+  const seller = orders[0] ? orders[0]['Seller'] : '';
+  modalRoot.innerHTML = `
+    <div class="overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <button class="close-x" onclick="closeModal()">&times;</button>
+        <h2>Group Into Bundle</h2>
+        <div class="sub">${figs.length} figures selected: ${figs.map(f=>esc(f['Figurine Name'])).join(', ')}</div>
+        <div class="field"><label>Group Buy / Bundle Name</label><input id="grp-name" placeholder="e.g. Dragon Ball Set – August 2026"></div>
+        <div class="row2">
+          <div class="field"><label>Seller</label>${sellerFieldHtml('grp-seller')}</div>
+          <div class="field"><label>Order Date</label><input type="date" id="grp-date"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Bundle Total Price (₹)</label><input type="number" id="grp-total" value="${sumPrice}" oninput="calcDueGroupSelected()"></div>
+          <div class="field"><label>Total Amount Paid (₹)</label><input type="number" id="grp-paid" value="${sumPaid}" oninput="calcDueGroupSelected()"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Due Amount</label><input id="grp-due" class="readonly" readonly value="${fmt(Math.max(sumPrice-sumPaid,0))}"></div>
+          <div class="field"><label>Delivery Status</label><select id="grp-delivery"><option>Ordered</option><option>In transit</option><option>Delivered</option></select></div>
+        </div>
+        <div class="toggle"><input type="checkbox" id="grp-equal" checked onchange="renderGroupSelectedAlloc()"> Split bundle equally</div>
+        <div id="grp-alloc" style="margin-top:10px"></div>
+        <div class="field" style="margin-top:12px"><label>Notes</label><textarea id="grp-notes" rows="2"></textarea></div>
+        <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="submitGroupSelected()">Create Bundle</button></div>
+      </div>
+    </div>`;
+  setTimeout(()=>{ const s=document.getElementById('grp-seller'); if(s) s.value = seller; renderGroupSelectedAlloc(); }, 0);
+}
+function calcDueGroupSelected(){
+  const t = Number(document.getElementById('grp-total').value||0);
+  const p = Number(document.getElementById('grp-paid').value||0);
+  document.getElementById('grp-due').value = fmt(Math.max(t-p,0));
+  renderGroupSelectedAlloc();
+}
+function renderGroupSelectedAlloc(){
+  const ids = Array.from(STATE.selected);
+  const figs = ids.map(id=>STATE.figures.find(f=>f['Figure ID']===id)).filter(Boolean);
+  const equalEl = document.getElementById('grp-equal');
+  const equal = equalEl ? equalEl.checked : true;
+  const total = Number(document.getElementById('grp-total').value||0);
+  const n = figs.length || 1;
+  const base = Math.floor((total/n)*100)/100;
+  const el = document.getElementById('grp-alloc');
+  if(!el) return;
+  el.innerHTML = figs.map((f,i)=>{
+    const val = equal ? (i===n-1 ? Math.round((total-base*(n-1))*100)/100 : base) : Number(f['Allocated Price']||0);
+    return `<div class="row2" style="align-items:center;margin-bottom:8px">
+      <div style="font-size:.85rem">${esc(f['Figurine Name'])}</div>
+      <input type="number" class="grp-alloc-input" data-fig="${f['Figure ID']}" value="${val}" ${equal?'readonly':''}>
+    </div>`;
+  }).join('');
+}
+async function submitGroupSelected(){
+  const ids = Array.from(STATE.selected);
+  const figs = ids.map(id=>STATE.figures.find(f=>f['Figure ID']===id)).filter(Boolean);
+  const orderIds = Array.from(new Set(figs.map(f=>f['Order ID'])));
+  const name = document.getElementById('grp-name').value.trim();
+  const seller = document.getElementById('grp-seller').value;
+  const total = Number(document.getElementById('grp-total').value||0);
+  if(!name || !seller || !total){ toast('Bundle name, seller and total price are required'); return; }
+  const equal = document.getElementById('grp-equal').checked;
+  let customAllocations = null;
+  if(!equal){
+    customAllocations = Array.from(document.querySelectorAll('.grp-alloc-input')).map(i=>Number(i.value||0));
+    const sum = customAllocations.reduce((s,v)=>s+v,0);
+    if(Math.abs(sum-total) > 0.5){ toast(`Allocations (₹${fmt(sum)}) must sum to bundle total (₹${fmt(total)})`); return; }
+  }
+  const payload = {
+    orderIds, groupBuyName: name, seller,
+    orderDate: document.getElementById('grp-date').value,
+    totalPrice: total, paidAmount: Number(document.getElementById('grp-paid').value||0),
+    deliveryStatus: document.getElementById('grp-delivery').value,
+    notes: document.getElementById('grp-notes').value,
+    splitEqually: equal, customAllocations
+  };
+  const res = await api('groupExistingOrders', payload);
+  if(res.ok){
+    STATE.selectMode = false; STATE.selected = new Set();
+    document.getElementById('btn-group-mode').classList.remove('active-mode');
+    await loadData();
+    showGroupConfirmation(res.groupBuyId, name, res.figureNames || figs.map(f=>f['Figurine Name']), total);
+  } else toast(res.error);
+}
+
+/* ---- Large image + details popup (click any figure image) ---- */
+function openViewModal(figureId){
+  const f = STATE.figures.find(x=>x['Figure ID']===figureId);
+  if(!f) return;
+  const o = STATE.orders.find(x=>x['Order ID']===f['Order ID']) || {};
+  const isGroup = o['Purchase Type'] === 'Group Buy / Bundle';
+  modalRoot.innerHTML = `
+    <div class="overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal" style="max-width:520px;text-align:center">
+        <button class="close-x" onclick="closeModal()">&times;</button>
+        <h2>${esc(f['Figurine Name'])}</h2>
+        <div class="sub">${esc(o['Seller']||f['Seller']||'')}${o['Order Date']?' · '+esc(o['Order Date']):''}</div>
+        ${f['Image URL'] ? `<img src="${esc(f['Image URL'])}" style="width:100%;max-height:380px;object-fit:contain;border-radius:12px;margin:6px 0 14px;background:#eee">` : '<div class="empty">No image yet</div>'}
+        <div class="row2" style="text-align:left">
+          <div class="field"><label>${isGroup?'Allocated Price':'Total Price'}</label><div style="font-weight:700">₹${fmt(f['Allocated Price'])}</div></div>
+          <div class="field"><label>${isGroup?'Bundle Due':'Due Amount'}</label><div style="font-weight:700">₹${fmt(o['Due Amount'])}</div></div>
+        </div>
+        <div class="chips" style="justify-content:center;margin:6px 0 4px">
+          <span class="chip ${chipClass(f['Delivery Status']||o['Delivery Status'])}">${esc(f['Delivery Status']||o['Delivery Status']||'Ordered')}</span>
+          <span class="chip ${o['Payment Status']==='Paid'?'paid':'pending'}">${isGroup ? 'GROUP BUY — '+(o['Payment Status']==='Paid'?'PAID':'PARTIALLY PAID') : (o['Payment Status']==='Paid'?'PAID':'PAYMENT PENDING')}</span>
+        </div>
+        ${isGroup?`<div class="meta">Part of <a href="#" onclick="openGroupModal('${o['Group Buy ID']}');return false;">${esc(o['Group Buy Name'])}</a></div>`:''}
+        <div class="modal-actions" style="justify-content:center">
+          <button class="btn btn-dark" onclick="${isGroup?`openFigureEditModal('${f['Figure ID']}')`:`openEditModal('${o['Order ID']}')`}">Edit</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ===================== Boot ===================== */
+(function boot(){
+  if(localStorage.getItem(LS.token) && getApiUrl()){ showApp(); }
+})();
+</script>
+</body>
+</html>
