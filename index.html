@@ -146,6 +146,29 @@ td img{width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:
 .btn-ghost-dark{background:transparent;color:var(--danger);border:1px solid var(--line)}
 .btn-ghost-dark:hover{background:#fbe1e1}
 
+/* ===== Multi-select filter dropdowns ===== */
+.msel{position:relative}
+.msel-btn{background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:.85rem;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.msel-btn.active{border-color:var(--accent);color:var(--accent)}
+.msel-count{background:var(--accent);color:#fff;border-radius:10px;padding:1px 7px;font-size:.68rem;font-weight:800}
+.msel-panel{position:absolute;top:calc(100% + 6px);left:0;background:var(--paper);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:10px;width:230px;max-height:290px;overflow-y:auto;z-index:35}
+.msel-actions{display:flex;justify-content:space-between;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.msel-actions button{background:none;border:none;color:var(--accent);font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.03em;cursor:pointer}
+.msel-option{display:flex;align-items:center;gap:8px;padding:5px 2px;font-size:.85rem;cursor:pointer}
+.msel-option input{accent-color:var(--accent)}
+.msel-empty{font-size:.78rem;color:var(--text-dim);padding:6px 2px}
+
+/* ===== Dashboard breakdown bars ===== */
+.bar-section{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);margin-bottom:16px}
+.bar-section h3{margin:0 0 12px;font-size:1.3rem}
+.bar-row{margin-bottom:10px}
+.bar-row:last-child{margin-bottom:0}
+.bar-row .bar-label{display:flex;justify-content:space-between;gap:10px;font-size:.8rem;margin-bottom:4px}
+.bar-row .bar-label .l{color:var(--ink);font-weight:600}
+.bar-row .bar-label .l .n{color:var(--text-dim);font-weight:400}
+.bar-track{background:#eee6d8;border-radius:6px;height:10px;overflow:hidden}
+.bar-fill{height:100%;border-radius:6px;background:var(--accent)}
+
 /* ===== Selection mode (group existing figures into a bundle) ===== */
 .card.selected-card{outline:3px solid var(--accent);outline-offset:-3px}
 .card-checkbox{position:absolute;top:8px;right:8px;width:22px;height:22px;z-index:5;accent-color:var(--accent)}
@@ -189,6 +212,8 @@ td img{width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:
         <input type="text" id="settings-api-url" placeholder="https://script.google.com/macros/s/xxx/exec">
         <button class="btn btn-sm btn-dark" style="width:100%;margin-top:6px" onclick="saveApiUrlFromSettings()">Save URL</button>
         <div class="settings-menu-divider"></div>
+        <button class="btn btn-sm btn-dark" style="width:100%" onclick="toggleSettingsMenu(); openAdminPanel()">🛠 Manage Filter Options</button>
+        <div class="settings-menu-divider"></div>
         <button class="btn btn-sm btn-ghost-dark" style="width:100%" onclick="logout()">Log out</button>
       </div>
     </div>
@@ -198,19 +223,14 @@ td img{width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:
     <div class="dash-grid" id="dashboard"></div>
 
     <div class="toolbar">
-      <input class="search" type="text" id="f-search" placeholder="Search figurine, seller, group buy..." oninput="render()">
-      <select id="f-seller" onchange="render()"><option value="">All Sellers</option></select>
-      <select id="f-delivery" onchange="render()">
-        <option value="">All Delivery</option><option>Ordered</option><option>In transit</option><option>Delivered</option>
-      </select>
-      <select id="f-payment" onchange="render()"><option value="">All Payment</option><option value="Paid">Paid</option><option value="Payment Pending">Payment Pending</option></select>
-      <select id="f-type" onchange="render()"><option value="">All Types</option><option value="Individual Figure">Individual</option><option value="Group Buy / Bundle">Group Buy</option></select>
-      <select id="f-ip" onchange="render()"><option value="">All IPs</option></select>
+      <input class="search" type="text" id="f-search" placeholder="Search figurine, seller, group buy, IP, type..." oninput="render()">
+      <span id="msel-holder-col"></span>
       <select id="f-sort" onchange="render()">
         <option value="date-desc">Newest First</option><option value="date-asc">Oldest First</option>
         <option value="price-desc">Price: High-Low</option><option value="price-asc">Price: Low-High</option>
         <option value="due-desc">Outstanding: High First</option>
       </select>
+      <button class="btn btn-sm btn-ghost-dark" onclick="resetFilters()">↺ Reset</button>
       <button class="btn btn-sm btn-dark" id="btn-group-mode" onclick="toggleSelectMode()">🔗 Group Figures</button>
       <button class="btn btn-sm btn-dark" onclick="openBundlesListModal()">📦 Edit Bundles</button>
       <div class="view-toggle">
@@ -241,8 +261,8 @@ td img{width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:
 
    <div id="page-dashboard" class="hidden">
     <div class="toolbar">
-      <select id="db-seller" onchange="renderAnalyticsDashboard()"><option value="">All Sellers</option></select>
-      <select id="db-ip" onchange="renderAnalyticsDashboard()"><option value="">All IPs</option></select>
+      <span id="msel-holder-db"></span>
+      <button class="btn btn-sm btn-ghost-dark" onclick="resetDbFilters()">↺ Reset</button>
     </div>
     <div id="analytics-dashboard"></div>
    </div>
@@ -254,10 +274,32 @@ td img{width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:
 <script>
 /* ===================== Config & Auth ===================== */
 const LS = {
-  apiUrl: 'afv_api_url', token: 'afv_token', view: 'afv_view'
+  apiUrl: 'afv_api_url', token: 'afv_token', view: 'afv_view',
+  customIp: 'afv_custom_ip', customType: 'afv_custom_type'
 };
 const IP_PRESETS = ['Dragon Ball','One Piece','MHA','Cartoon Network','DC','Marvel','Naruto','One Punch Man','Pokemon','Others'];
 const PRODUCT_TYPE_OPTIONS = ['Funko Pop','Banpresto','Gunpla','Bandai Kits','3D Prints','Others'];
+
+/* ---- Admin-managed extra options for the IP / Product Type filters & dropdowns ----
+   Stored in this browser's localStorage (same place the API URL/token already live) —
+   this only extends the pick-lists shown in the UI, it never touches the Sheet. Any
+   value a figure actually uses (from the Sheet) always shows up regardless of this list. */
+function getCustomList(key){
+  try{ return JSON.parse(localStorage.getItem(key) || '[]'); }catch(e){ return []; }
+}
+function saveCustomList(key, arr){ localStorage.setItem(key, JSON.stringify(arr)); }
+function addCustomOption(key, value){
+  value = (value||'').trim();
+  if(!value) return false;
+  const list = getCustomList(key);
+  if(list.some(v=>v.toLowerCase()===value.toLowerCase())) return false;
+  list.push(value);
+  saveCustomList(key, list);
+  return true;
+}
+function removeCustomOption(key, value){
+  saveCustomList(key, getCustomList(key).filter(v=>v!==value));
+}
 function getApiUrl(){ return localStorage.getItem(LS.apiUrl) || ''; }
 function saveApiUrl(){
   const v = document.getElementById('cfg-api-url').value.trim();
@@ -340,7 +382,13 @@ async function showApp(){
 }
 
 /* ===================== Data ===================== */
-let STATE = { orders: [], figures: [], sellers: [], view: localStorage.getItem(LS.view) || 'gallery', selectMode: false, selected: new Set(), categorizeMode: false, catSelected: new Set(), page: 'collection' };
+let STATE = {
+  orders: [], figures: [], sellers: [], view: localStorage.getItem(LS.view) || 'gallery',
+  selectMode: false, selected: new Set(), categorizeMode: false, catSelected: new Set(), page: 'collection',
+  filters: { seller: new Set(), delivery: new Set(), payment: new Set(), type: new Set(), ip: new Set(), productType: new Set() },
+  dbFilters: { seller: new Set(), delivery: new Set(), payment: new Set(), type: new Set(), ip: new Set(), productType: new Set() }
+};
+initFilterBars();
 
 function setPage(p){
   STATE.page = p;
@@ -358,37 +406,135 @@ async function loadData(){
   STATE.orders = data.orders || [];
   STATE.figures = data.figures || [];
   STATE.sellers = data.sellers || [];
-  populateSellerFilter();
-  populateIpFilters();
+  refreshAllMselButtons('col');
+  refreshAllMselButtons('db');
   render();
+  if(STATE.page === 'dashboard') renderAnalyticsDashboard();
 }
 
-function populateSellerFilter(){
-  ['f-seller','db-seller'].forEach(id=>{
-    const sel = document.getElementById(id);
-    if(!sel) return;
-    const current = sel.value;
-    sel.innerHTML = '<option value="">All Sellers</option>' +
-      STATE.sellers.map(s=>`<option value="${esc(s['Seller Name'])}">${esc(s['Seller Name'])}</option>`).join('');
-    sel.value = current;
-  });
-}
-
+/* option lists = admin-added custom values ∪ presets ∪ whatever's actually used in the data, always deduped, 'Others' pinned last */
 function ipOptionsList(){
   const used = Array.from(new Set(STATE.figures.map(f=>f['IP']).filter(Boolean)));
+  const custom = getCustomList(LS.customIp);
   const base = IP_PRESETS.filter(x=>x!=='Others');
-  const extra = used.filter(x=>base.indexOf(x)===-1 && x!=='Others');
+  const seen = new Set(base.map(x=>x.toLowerCase()));
+  const extra = [];
+  [...custom, ...used].forEach(v=>{
+    if(v && v!=='Others' && !seen.has(v.toLowerCase())){ seen.add(v.toLowerCase()); extra.push(v); }
+  });
   return [...base, ...extra, 'Others'];
 }
-function populateIpFilters(){
-  const opts = ipOptionsList();
-  ['f-ip','db-ip'].forEach(id=>{
-    const sel = document.getElementById(id);
-    if(!sel) return;
-    const current = sel.value;
-    sel.innerHTML = '<option value="">All IPs</option>' + opts.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
-    sel.value = current;
+function productTypeOptionsList(){
+  const used = Array.from(new Set(STATE.figures.map(f=>f['Product Type']).filter(Boolean)));
+  const custom = getCustomList(LS.customType);
+  const base = PRODUCT_TYPE_OPTIONS.filter(x=>x!=='Others');
+  const seen = new Set(base.map(x=>x.toLowerCase()));
+  const extra = [];
+  [...custom, ...used].forEach(v=>{
+    if(v && v!=='Others' && !seen.has(v.toLowerCase())){ seen.add(v.toLowerCase()); extra.push(v); }
   });
+  return [...base, ...extra, 'Others'];
+}
+
+/* ===================== Multi-select filter dropdowns ===================== */
+const FILTER_DEFS = {
+  seller: { label: 'Seller', dynamic: 'sellers' },
+  delivery: { label: 'Delivery', options: ['Ordered','In transit','Delivered'] },
+  payment: { label: 'Payment', options: ['Paid','Payment Pending'] },
+  type: { label: 'Purchase Type', options: ['Individual Figure','Group Buy / Bundle'] },
+  ip: { label: 'IP / Series', dynamic: 'ip' },
+  productType: { label: 'Product Type', dynamic: 'productType' }
+};
+const FILTER_KEYS_COL = ['seller','delivery','payment','type','ip','productType'];
+const FILTER_KEYS_DB = ['seller','ip','productType','delivery','payment','type'];
+
+function mselOptions(key){
+  const def = FILTER_DEFS[key];
+  if(def.options) return def.options;
+  if(def.dynamic === 'sellers') return STATE.sellers.map(s=>s['Seller Name']);
+  if(def.dynamic === 'ip') return ipOptionsList();
+  if(def.dynamic === 'productType') return productTypeOptionsList();
+  return [];
+}
+function mselHtml(scope, key){
+  const def = FILTER_DEFS[key];
+  return `<div class="msel" id="msel-${scope}-${key}">
+    <button type="button" class="msel-btn" onclick="toggleMsel('${scope}','${key}')">${esc(def.label)}<span class="msel-count hidden" id="msel-count-${scope}-${key}"></span> ▾</button>
+    <div class="msel-panel hidden" id="msel-panel-${scope}-${key}"></div>
+  </div>`;
+}
+function initFilterBars(){
+  document.getElementById('msel-holder-col').innerHTML = FILTER_KEYS_COL.map(k=>mselHtml('col',k)).join('');
+  document.getElementById('msel-holder-db').innerHTML = FILTER_KEYS_DB.map(k=>mselHtml('db',k)).join('');
+}
+function escJs(s){ return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+function filterBag(scope){ return scope === 'col' ? STATE.filters : STATE.dbFilters; }
+function toggleMsel(scope, key){
+  document.querySelectorAll('.msel-panel').forEach(p=>{ if(p.id !== 'msel-panel-'+scope+'-'+key) p.classList.add('hidden'); });
+  const panel = document.getElementById('msel-panel-'+scope+'-'+key);
+  const opening = panel.classList.contains('hidden');
+  if(opening) renderMselPanel(scope, key);
+  panel.classList.toggle('hidden');
+}
+function renderMselPanel(scope, key){
+  const panel = document.getElementById('msel-panel-'+scope+'-'+key);
+  const opts = mselOptions(key);
+  const set = filterBag(scope)[key];
+  if(!opts.length){ panel.innerHTML = '<div class="msel-empty">No values yet</div>'; return; }
+  panel.innerHTML = `<div class="msel-actions"><button type="button" onclick="mselAll('${scope}','${key}')">Select All</button><button type="button" onclick="mselNone('${scope}','${key}')">Clear</button></div>` +
+    opts.map(v=>`<label class="msel-option"><input type="checkbox" ${set.has(v)?'checked':''} onchange="mselToggle('${scope}','${key}','${escJs(v)}')">${esc(v)}</label>`).join('');
+}
+function mselToggle(scope, key, value){
+  const set = filterBag(scope)[key];
+  if(set.has(value)) set.delete(value); else set.add(value);
+  updateMselButton(scope, key);
+  scope === 'col' ? render() : renderAnalyticsDashboard();
+}
+function mselAll(scope, key){
+  filterBag(scope)[key] = new Set(mselOptions(key));
+  renderMselPanel(scope, key); updateMselButton(scope, key);
+  scope === 'col' ? render() : renderAnalyticsDashboard();
+}
+function mselNone(scope, key){
+  filterBag(scope)[key] = new Set();
+  renderMselPanel(scope, key); updateMselButton(scope, key);
+  scope === 'col' ? render() : renderAnalyticsDashboard();
+}
+function updateMselButton(scope, key){
+  const n = filterBag(scope)[key].size;
+  const wrap = document.getElementById('msel-'+scope+'-'+key);
+  if(!wrap) return;
+  const btn = wrap.querySelector('.msel-btn');
+  const countEl = document.getElementById('msel-count-'+scope+'-'+key);
+  if(n > 0){ btn.classList.add('active'); countEl.textContent = n; countEl.classList.remove('hidden'); }
+  else { btn.classList.remove('active'); countEl.classList.add('hidden'); }
+}
+function refreshAllMselButtons(scope){
+  (scope === 'col' ? FILTER_KEYS_COL : FILTER_KEYS_DB).forEach(k=>updateMselButton(scope, k));
+}
+document.addEventListener('click', function(e){
+  document.querySelectorAll('.msel').forEach(m=>{
+    if(!m.contains(e.target)){ const p = m.querySelector('.msel-panel'); if(p) p.classList.add('hidden'); }
+  });
+});
+function isAnyColFilterActive(){
+  const q = document.getElementById('f-search') ? document.getElementById('f-search').value.trim() : '';
+  if(q) return true;
+  return Object.values(STATE.filters).some(s=>s.size > 0);
+}
+function resetFilters(){
+  document.getElementById('f-search').value = '';
+  document.getElementById('f-sort').value = 'date-desc';
+  FILTER_KEYS_COL.forEach(k=>{ STATE.filters[k] = new Set(); });
+  document.querySelectorAll('.msel-panel').forEach(p=>p.classList.add('hidden'));
+  refreshAllMselButtons('col');
+  render();
+}
+function resetDbFilters(){
+  FILTER_KEYS_DB.forEach(k=>{ STATE.dbFilters[k] = new Set(); });
+  document.querySelectorAll('.msel-panel').forEach(p=>p.classList.add('hidden'));
+  refreshAllMselButtons('db');
+  renderAnalyticsDashboard();
 }
 
 /* ===================== Derived rows ===================== */
@@ -433,18 +579,15 @@ function buildCards(){
 function filteredSorted(){
   let rows = buildCards();
   const q = document.getElementById('f-search').value.trim().toLowerCase();
-  const seller = document.getElementById('f-seller').value;
-  const delivery = document.getElementById('f-delivery').value;
-  const payment = document.getElementById('f-payment').value;
-  const type = document.getElementById('f-type').value;
-  const ip = document.getElementById('f-ip') ? document.getElementById('f-ip').value : '';
   const sort = document.getElementById('f-sort').value;
-  if(q) rows = rows.filter(r => (r.name||'').toLowerCase().includes(q) || (r.seller||'').toLowerCase().includes(q) || (r.groupBuyName||'').toLowerCase().includes(q));
-  if(seller) rows = rows.filter(r=>r.seller===seller);
-  if(delivery) rows = rows.filter(r=>r.delivery===delivery);
-  if(payment) rows = rows.filter(r=>r.paymentStatus===payment);
-  if(type) rows = rows.filter(r=>r.purchaseType===type);
-  if(ip) rows = rows.filter(r=>r.ip===ip);
+  const F = STATE.filters;
+  if(q) rows = rows.filter(r => (r.name||'').toLowerCase().includes(q) || (r.seller||'').toLowerCase().includes(q) || (r.groupBuyName||'').toLowerCase().includes(q) || (r.ip||'').toLowerCase().includes(q) || (r.productType||'').toLowerCase().includes(q));
+  if(F.seller.size) rows = rows.filter(r=>F.seller.has(r.seller));
+  if(F.delivery.size) rows = rows.filter(r=>F.delivery.has(r.delivery));
+  if(F.payment.size) rows = rows.filter(r=>F.payment.has(r.paymentStatus));
+  if(F.type.size) rows = rows.filter(r=>F.type.has(r.purchaseType));
+  if(F.ip.size) rows = rows.filter(r=>F.ip.has(r.ip));
+  if(F.productType.size) rows = rows.filter(r=>F.productType.has(r.productType));
   rows.sort((a,b)=>{
     if(sort==='price-desc') return b.price-a.price;
     if(sort==='price-asc') return a.price-b.price;
@@ -455,23 +598,26 @@ function filteredSorted(){
   return rows;
 }
 
-/* ===================== Dashboard ===================== */
-function renderDashboard(){
-  const orders = STATE.orders;
-  const figures = STATE.figures;
-  const totalFigures = figures.length;
-  const totalOrders = orders.length;
-  const groupBuys = orders.filter(o=>o['Purchase Type']==='Group Buy / Bundle').length;
-  const delivered = figures.filter(f=>(f['Delivery Status']||'')==='Delivered').length;
+/* ===================== Dashboard (top summary on Collection page — reflects active filters) ===================== */
+function renderDashboard(rows){
+  const orderIds = new Set(rows.map(r=>r.orderId));
+  const groupBuyIds = new Set(rows.filter(r=>r.isGroup).map(r=>r.groupBuyId));
+  const totalFigures = rows.length;
+  const totalOrders = orderIds.size;
+  const groupBuys = groupBuyIds.size;
+  const delivered = rows.filter(r=>r.delivery==='Delivered').length;
   const awaiting = totalFigures - delivered;
-  const fullyPaid = orders.filter(o=>o['Payment Status']==='Paid').length;
-  const outstanding = orders.reduce((s,o)=>s+Number(o['Due Amount']||0),0);
-  const collectionValue = orders.reduce((s,o)=>s+Number(o['Total Price']||0),0);
+  const paidOrderIds = new Set(rows.filter(r=>r.paymentStatus==='Paid').map(r=>r.orderId));
+  const fullyPaid = paidOrderIds.size;
+  const outstanding = rows.reduce((s,r)=>s+r.dueAmount,0);
+  const collectionValue = rows.reduce((s,r)=>s+r.totalPrice,0);
+  const filtered = isAnyColFilterActive();
+  const suffix = filtered ? ' (filtered)' : '';
   const stats = [
-    ['Total Figures', totalFigures, ''], ['Total Orders', totalOrders, ''],
-    ['Group Buys', groupBuys, ''], ['Awaiting Delivery', awaiting, 'warn'],
+    ['Figures'+suffix, totalFigures, ''], ['Orders'+suffix, totalOrders, ''],
+    ['Group Buys'+suffix, groupBuys, ''], ['Awaiting Delivery', awaiting, 'warn'],
     ['Delivered', delivered, 'ok'], ['Fully Paid Orders', fullyPaid, 'ok'],
-    ['Outstanding', '₹'+fmt(outstanding), 'accent'], ['Collection Value', '₹'+fmt(collectionValue), 'accent']
+    ['Outstanding', '₹'+fmt(outstanding), 'accent'], ['Collection Value'+suffix, '₹'+fmt(collectionValue), 'accent']
   ];
   document.getElementById('dashboard').innerHTML = stats.map(s=>`
     <div class="stat-card ${s[2]}"><div class="label">${s[0]}</div><div class="value">${s[1]}</div></div>
@@ -479,43 +625,89 @@ function renderDashboard(){
 }
 
 /* ===================== Analytics Dashboard (second page) ===================== */
-function renderAnalyticsDashboard(){
-  const sellerSel = document.getElementById('db-seller');
-  const ipSel = document.getElementById('db-ip');
-  if(!sellerSel || !ipSel) return;
-  const seller = sellerSel.value;
-  const ip = ipSel.value;
+function dbFilteredRows(){
   let rows = buildCards();
-  if(seller) rows = rows.filter(r=>r.seller===seller);
-  if(ip) rows = rows.filter(r=>r.ip===ip);
-
-  const bought = rows.length;
-  const fullyPaid = rows.filter(r=>r.paymentStatus==='Paid');
-  const partiallyPaid = rows.filter(r=>r.paymentStatus!=='Paid');
-  const delivered = rows.filter(r=>r.delivery==='Delivered');
-  const toBeDelivered = rows.filter(r=>r.delivery!=='Delivered');
-
-  const fullyPaidValue = fullyPaid.reduce((s,r)=>s+r.totalPrice,0);
-  const partiallyPaidDue = partiallyPaid.reduce((s,r)=>s+r.dueAmount,0);
-  const deliveredValue = delivered.reduce((s,r)=>s+r.totalPrice,0);
-  const toBeDeliveredValue = toBeDelivered.reduce((s,r)=>s+r.totalPrice,0);
-  const toBeDeliveredDue = toBeDelivered.reduce((s,r)=>s+r.dueAmount,0);
-
+  const F = STATE.dbFilters;
+  if(F.seller.size) rows = rows.filter(r=>F.seller.has(r.seller));
+  if(F.ip.size) rows = rows.filter(r=>F.ip.has(r.ip));
+  if(F.productType.size) rows = rows.filter(r=>F.productType.has(r.productType));
+  if(F.delivery.size) rows = rows.filter(r=>F.delivery.has(r.delivery));
+  if(F.payment.size) rows = rows.filter(r=>F.payment.has(r.paymentStatus));
+  if(F.type.size) rows = rows.filter(r=>F.type.has(r.purchaseType));
+  return rows;
+}
+function groupBy(rows, field){
+  const m = {};
+  rows.forEach(r=>{
+    const k = r[field] || 'Uncategorized';
+    if(!m[k]) m[k] = { count: 0, value: 0, due: 0 };
+    m[k].count++; m[k].value += r.totalPrice; m[k].due += r.dueAmount;
+  });
+  return Object.entries(m).map(([label,v])=>({ label, ...v })).sort((a,b)=>b.value-a.value);
+}
+function breakdownSection(title, items){
+  if(!items.length) return '';
+  const max = Math.max(...items.map(i=>i.value), 1);
+  return `<div class="bar-section"><h3>${esc(title)}</h3>` + items.map(i=>`
+    <div class="bar-row">
+      <div class="bar-label"><span class="l">${esc(i.label)} <span class="n">(${i.count})</span></span><span>₹${fmt(i.value)}</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.max(4, i.value/max*100)}%"></div></div>
+    </div>`).join('') + `</div>`;
+}
+function statusBarSection(title, items, totalCount){
+  return `<div class="bar-section"><h3>${esc(title)}</h3>` + items.map(i=>{
+    const pct = totalCount ? Math.round(i.count/totalCount*100) : 0;
+    return `<div class="bar-row">
+      <div class="bar-label"><span class="l">${esc(i.label)} <span class="n">— ${i.count} (${pct}%)</span></span><span>${esc(i.valueLabel||'Value')} ₹${fmt(i.value)}</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${i.color}"></div></div>
+    </div>`;
+  }).join('') + `</div>`;
+}
+function renderAnalyticsDashboard(){
   const el = document.getElementById('analytics-dashboard');
-  el.innerHTML = `
-    <div class="dash-grid">
-      <div class="stat-card"><div class="label">Figurines Bought</div><div class="value">${bought}</div></div>
-      <div class="stat-card ok"><div class="label">Completely Paid</div><div class="value">${fullyPaid.length}</div></div>
-      <div class="stat-card ok"><div class="label">Fully Paid — Order Value</div><div class="value">₹${fmt(fullyPaidValue)}</div></div>
-      <div class="stat-card warn"><div class="label">Partially Paid</div><div class="value">${partiallyPaid.length}</div></div>
-      <div class="stat-card warn"><div class="label">Partially Paid — Due</div><div class="value">₹${fmt(partiallyPaidDue)}</div></div>
-      <div class="stat-card ok"><div class="label">Delivered</div><div class="value">${delivered.length}</div></div>
-      <div class="stat-card ok"><div class="label">Delivered — Order Value</div><div class="value">₹${fmt(deliveredValue)}</div></div>
-      <div class="stat-card accent"><div class="label">To Be Delivered</div><div class="value">${toBeDelivered.length}</div></div>
-      <div class="stat-card accent"><div class="label">To Be Delivered — Order Value</div><div class="value">₹${fmt(toBeDeliveredValue)}</div></div>
-      <div class="stat-card accent"><div class="label">To Be Delivered — Due</div><div class="value">₹${fmt(toBeDeliveredDue)}</div></div>
-    </div>
-  `;
+  if(!el) return;
+  const rows = dbFilteredRows();
+  if(!rows.length){ el.innerHTML = '<div class="empty">No figures match these filters.</div>'; return; }
+
+  const fullyPaidRows = rows.filter(r=>r.paymentStatus==='Paid');
+  const partialRows = rows.filter(r=>r.paymentStatus!=='Paid');
+  const deliveredRows = rows.filter(r=>r.delivery==='Delivered');
+  const transitRows = rows.filter(r=>r.delivery==='In transit');
+  const orderedRows = rows.filter(r=>r.delivery==='Ordered');
+
+  const totalValue = rows.reduce((s,r)=>s+r.totalPrice,0);
+  const totalDue = rows.reduce((s,r)=>s+r.dueAmount,0);
+  const uncategorized = rows.filter(r=>!r.ip || !r.productType).length;
+
+  const overviewHtml = `<div class="dash-grid">
+      <div class="stat-card"><div class="label">Figurines</div><div class="value">${rows.length}</div></div>
+      <div class="stat-card accent"><div class="label">Total Value</div><div class="value">₹${fmt(totalValue)}</div></div>
+      <div class="stat-card warn"><div class="label">Outstanding Due</div><div class="value">₹${fmt(totalDue)}</div></div>
+      <div class="stat-card ${uncategorized?'warn':'ok'}"><div class="label">Uncategorized</div><div class="value">${uncategorized}</div></div>
+    </div>`;
+
+  const paymentHtml = statusBarSection('Payment Status', [
+    { label:'Fully Paid', count:fullyPaidRows.length, value:fullyPaidRows.reduce((s,r)=>s+r.totalPrice,0), valueLabel:'Order Value', color:'var(--ok)' },
+    { label:'Partially Paid', count:partialRows.length, value:partialRows.reduce((s,r)=>s+r.dueAmount,0), valueLabel:'Due', color:'var(--warn)' }
+  ], rows.length);
+
+  const deliveryHtml = statusBarSection('Delivery Status', [
+    { label:'Delivered', count:deliveredRows.length, value:deliveredRows.reduce((s,r)=>s+r.totalPrice,0), valueLabel:'Order Value', color:'var(--ok)' },
+    { label:'In Transit', count:transitRows.length, value:transitRows.reduce((s,r)=>s+r.totalPrice,0), valueLabel:'Order Value', color:'#2f5fb6' },
+    { label:'Ordered (Awaiting Shipment)', count:orderedRows.length, value:orderedRows.reduce((s,r)=>s+r.totalPrice,0), valueLabel:'Order Value', color:'var(--accent-2)' }
+  ], rows.length);
+
+  const byIpHtml = breakdownSection('Spend by IP / Series', groupBy(rows,'ip'));
+  const bySellerHtml = breakdownSection('Spend by Seller', groupBy(rows,'seller'));
+  const byTypeHtml = breakdownSection('Spend by Product Type', groupBy(rows,'productType'));
+
+  const attentionHtml = uncategorized ? `<div class="bar-section">
+      <h3>Needs Attention</h3>
+      <div class="sub" style="margin-bottom:10px">${uncategorized} figure${uncategorized===1?'':'s'} in this view ${uncategorized===1?'is':'are'} missing an IP or Product Type tag.</div>
+      <button class="btn btn-sm btn-dark" onclick="setPage('collection'); openCategorizeModal();">🏷 Categorize Now</button>
+    </div>` : '';
+
+  el.innerHTML = overviewHtml + paymentHtml + deliveryHtml + byIpHtml + bySellerHtml + byTypeHtml + attentionHtml;
 }
 
 /* ===================== Render list ===================== */
@@ -524,9 +716,9 @@ function fmt(n){ return Number(n||0).toLocaleString('en-IN'); }
 function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 function render(){
-  renderDashboard();
-  updateSelectBar();
   const rows = filteredSorted();
+  renderDashboard(rows);
+  updateSelectBar();
   if(STATE.view==='gallery'){
     document.getElementById('gallery').classList.remove('hidden');
     document.getElementById('table-wrap').classList.add('hidden');
@@ -704,6 +896,60 @@ function toast(msg){
 /* ===================== Modals ===================== */
 const modalRoot = document.getElementById('modal-root');
 function closeModal(){ modalRoot.innerHTML=''; }
+
+/* ---- Admin panel: add/remove custom IP & Product Type filter options (local to this browser — never touches the Sheet) ---- */
+function openAdminPanel(){
+  modalRoot.innerHTML = `
+    <div class="overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal" style="max-width:480px">
+        <button class="close-x" onclick="closeModal()">&times;</button>
+        <h2>Manage Filter Options</h2>
+        <div class="sub">Add new IP / Product Type values so they show up as options everywhere — in filters and in the Add/Edit forms. Delivery, Payment and Purchase Type are fixed by how the app works and aren't editable here. Sellers are added inline from any "Select seller…" dropdown. This only changes what shows up in this browser — it never touches your Sheet.</div>
+        <div id="admin-ip-section"></div>
+        <div id="admin-type-section" style="margin-top:18px"></div>
+        <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Done</button></div>
+      </div>
+    </div>`;
+  renderAdminSection('ip', LS.customIp, 'IP / Series', IP_PRESETS, ipOptionsList);
+  renderAdminSection('type', LS.customType, 'Product Type', PRODUCT_TYPE_OPTIONS, productTypeOptionsList);
+}
+function renderAdminSection(kind, lsKey, label, presets, optionsFn){
+  const el = document.getElementById('admin-' + kind + '-section');
+  const custom = getCustomList(lsKey);
+  const presetSet = new Set(presets.map(p=>p.toLowerCase()));
+  el.innerHTML = `
+    <div class="field"><label>${esc(label)}</label></div>
+    <div class="row2" style="margin-bottom:10px">
+      <input type="text" id="admin-${kind}-new" placeholder="Add a new ${esc(label)} value…" onkeydown="if(event.key==='Enter')adminAddOption('${kind}','${escJs(lsKey)}')">
+      <button class="btn btn-sm btn-dark" onclick="adminAddOption('${kind}','${escJs(lsKey)}')">+ Add</button>
+    </div>
+    <div class="chips" style="gap:8px">
+      ${presets.map(p=>`<span class="chip ordered" title="Built-in preset">${esc(p)}</span>`).join('')}
+      ${custom.map(v=>`<span class="chip pending" style="display:inline-flex;align-items:center;gap:6px">${esc(v)} <button type="button" style="background:none;border:none;color:inherit;font-weight:900;cursor:pointer;padding:0" onclick="adminRemoveOption('${kind}','${escJs(lsKey)}','${escJs(v)}')">✕</button></span>`).join('')}
+    </div>
+    ${custom.length===0?'<div class="msel-empty" style="padding-top:6px">No custom values added yet.</div>':''}
+  `;
+}
+function adminAddOption(kind, lsKey){
+  const input = document.getElementById('admin-' + kind + '-new');
+  const v = input.value.trim();
+  if(!v){ toast('Enter a value first'); return; }
+  const ok = addCustomOption(lsKey, v);
+  if(!ok){ toast('That value already exists'); return; }
+  input.value = '';
+  const label = kind === 'ip' ? 'IP / Series' : 'Product Type';
+  const presets = kind === 'ip' ? IP_PRESETS : PRODUCT_TYPE_OPTIONS;
+  renderAdminSection(kind, lsKey, label, presets, kind === 'ip' ? ipOptionsList : productTypeOptionsList);
+  refreshAllMselButtons('col'); refreshAllMselButtons('db');
+  toast(`Added "${v}" — it'll show up in filters and forms now`);
+}
+function adminRemoveOption(kind, lsKey, value){
+  removeCustomOption(lsKey, value);
+  const label = kind === 'ip' ? 'IP / Series' : 'Product Type';
+  const presets = kind === 'ip' ? IP_PRESETS : PRODUCT_TYPE_OPTIONS;
+  renderAdminSection(kind, lsKey, label, presets, kind === 'ip' ? ipOptionsList : productTypeOptionsList);
+  refreshAllMselButtons('col'); refreshAllMselButtons('db');
+}
 
 function openAddModal(){
   modalRoot.innerHTML = `
