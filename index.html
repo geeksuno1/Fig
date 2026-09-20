@@ -80,8 +80,11 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
 .kpi-card .kpi-value{font-family:'Bebas Neue';font-size:2.1rem;color:var(--hd-ink);margin-top:8px;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kpi-card.hero .kpi-value{color:var(--hd-gold)}
 .spend-panel{margin-top:22px;padding-top:22px;border-top:1px solid var(--hd-line)}
-.spend-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:6px}
-.spend-title{font-family:'Bebas Neue';font-size:1.4rem;color:var(--hd-ink);letter-spacing:.02em}
+.spend-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:6px;cursor:pointer;user-select:none}
+.spend-head:hover .spend-title{color:var(--hd-gold)}
+.spend-title{font-family:'Bebas Neue';font-size:1.4rem;color:var(--hd-ink);letter-spacing:.02em;display:flex;align-items:center;gap:8px;transition:color .15s}
+.spend-chevron{display:inline-block;font-size:.85rem;color:var(--hd-muted);transition:transform .18s}
+.spend-panel.collapsed .spend-chevron{transform:rotate(-90deg)}
 .spend-milestones{font-size:.8rem;color:var(--hd-muted);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .spend-milestones b{color:var(--hd-gold);font-weight:700}
 .spend-chart-wrap{margin-top:14px}
@@ -89,6 +92,7 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
 .spend-bars-svg{display:block;width:100%;height:56px;margin-top:2px}
 .spend-x-labels{display:flex;justify-content:space-between;font-size:.68rem;color:var(--hd-muted);margin-top:6px;padding:0 1px}
 .spend-empty{color:var(--hd-muted);font-size:.85rem;padding:30px 0;text-align:center}
+.spend-panel.collapsed .spend-chart-wrap,.spend-panel.collapsed .spend-x-labels{display:none}
 @media (max-width:900px){ .kpi-grid{grid-template-columns:repeat(3,1fr)} }
 @media (max-width:520px){ .kpi-grid{grid-template-columns:repeat(2,1fr)} .kpi-card .kpi-value{font-size:1.7rem} }
 
@@ -411,7 +415,8 @@ td img{width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:
 const LS = {
   apiUrl: 'afv_api_url', token: 'afv_token', view: 'afv_view',
   customIp: 'afv_custom_ip', customType: 'afv_custom_type',
-  customDelivery: 'afv_custom_delivery', hiddenSellers: 'afv_hidden_sellers'
+  customDelivery: 'afv_custom_delivery', hiddenSellers: 'afv_hidden_sellers',
+  spendCollapsed: 'afv_spend_collapsed'
 };
 const IP_PRESETS = ['Dragon Ball','One Piece','MHA','Cartoon Network','DC','Marvel','Naruto','One Punch Man','Pokemon','Others'];
 const PRODUCT_TYPE_OPTIONS = ['Funko Pop','Banpresto','Gunpla','Bandai Kits','3D Prints','Others'];
@@ -524,7 +529,8 @@ let STATE = {
   selectMode: false, selected: new Set(), categorizeMode: false, catSelected: new Set(), page: 'collection',
   filters: { seller: new Set(), delivery: new Set(), payment: new Set(), type: new Set(), ip: new Set(), productType: new Set() },
   dbFilters: { seller: new Set(), delivery: new Set(), payment: new Set(), type: new Set(), ip: new Set(), productType: new Set() },
-  prevView: 'gallery', sheetDirty: new Set(), sheetRows: []
+  prevView: 'gallery', sheetDirty: new Set(), sheetRows: [],
+  spendCollapsed: localStorage.getItem(LS.spendCollapsed) !== 'false'
 };
 
 function setPage(p){
@@ -909,9 +915,9 @@ function renderDashboard(rows){
     <div class="kpi-grid">
       ${kpis.map(k=>`<div class="kpi-card${k[2]?' hero':''}"><div class="kpi-label">${k[0]}</div><div class="kpi-value">${k[1]}</div></div>`).join('')}
     </div>
-    <div class="spend-panel">
-      <div class="spend-head">
-        <div class="spend-title">₹ Total Spend Over Time</div>
+    <div class="spend-panel${STATE.spendCollapsed?' collapsed':''}" id="spend-panel">
+      <div class="spend-head" onclick="toggleSpendPanel()">
+        <div class="spend-title"><span class="spend-chevron">▾</span>₹ Total Spend Over Time</div>
         <div class="spend-milestones" id="spend-milestones"></div>
       </div>
       <div class="spend-chart-wrap" id="spend-chart-wrap"></div>
@@ -919,6 +925,12 @@ function renderDashboard(rows){
     </div>
   `;
   renderSpendChart(rows);
+}
+function toggleSpendPanel(){
+  STATE.spendCollapsed = !STATE.spendCollapsed;
+  localStorage.setItem(LS.spendCollapsed, STATE.spendCollapsed ? 'true' : 'false');
+  const panel = document.getElementById('spend-panel');
+  if(panel) panel.classList.toggle('collapsed', STATE.spendCollapsed);
 }
 
 /* ===================== Analytics Dashboard (second page) ===================== */
