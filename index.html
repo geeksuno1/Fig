@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Figure Vault — PREVIEW (sample data, not for hosting)</title>
+<title>Figure Vault — Order Tracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -91,21 +91,6 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
 .spend-empty{color:var(--hd-muted);font-size:.85rem;padding:30px 0;text-align:center}
 @media (max-width:900px){ .kpi-grid{grid-template-columns:repeat(3,1fr)} }
 @media (max-width:520px){ .kpi-grid{grid-template-columns:repeat(2,1fr)} .kpi-card .kpi-value{font-size:1.7rem} }
-
-/* ===== Toolbar ===== */
-.toolbar{display:flex;flex-direction:column;gap:12px;margin-bottom:18px;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
-.toolbar select, .toolbar input[type=text]{height:38px;box-sizing:border-box;padding:0 12px;border:1px solid var(--line);border-radius:9px;font-size:.85rem;background:#fff;color:var(--ink)}
-.toolbar select{cursor:pointer}
-.toolbar .search{flex:1 1 260px;min-width:180px;max-width:360px}
-.toolbar .btn{height:38px;box-sizing:border-box;display:inline-flex;align-items:center}
-.toolbar-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.toolbar-row.between{justify-content:space-between}
-.toolbar-group{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.filter-pills{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.view-toggle{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;height:38px;box-sizing:border-box}
-.view-toggle button{background:#fff;border:none;padding:0 14px;font-size:.85rem;font-weight:600;color:var(--text-dim);height:100%}
-.view-toggle button.active{background:var(--ink);color:#fff}
-
 
 /* ===== Toolbar ===== */
 .toolbar{display:flex;flex-direction:column;gap:12px;margin-bottom:18px;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
@@ -272,9 +257,6 @@ td img{width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:
 </style>
 </head>
 <body>
-<div style="position:sticky;top:0;z-index:200;background:#3a1f0d;color:#ffe9c7;text-align:center;font-size:.8rem;font-weight:700;padding:8px 14px;letter-spacing:.02em">
-  ⚠ PREVIEW COPY — sample data only. The password gate and "save the Apps Script URL once" flow work the same as the real app, but any password works here and the URL isn't actually used. Do not upload this file to GitHub Pages; deploy the real <code>index.html</code> instead.
-</div>
 
 <div id="login-screen">
   <div class="login-card">
@@ -305,7 +287,6 @@ td img{width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:
       <button class="btn btn-ghost" id="settings-btn" onclick="toggleSettingsMenu()">⚙ Settings</button>
       <div id="settings-menu" class="settings-menu hidden">
         <div class="settings-menu-label">Apps Script Web App URL</div>
-        <div style="font-size:.72rem;color:var(--text-dim);margin:-2px 0 8px">Preview mode — this URL isn't actually used (sample data only), but saving/changing it behaves like the real app.</div>
         <input type="text" id="settings-api-url" placeholder="https://script.google.com/macros/s/xxx/exec">
         <button class="btn btn-sm btn-dark" style="width:100%;margin-top:6px" onclick="saveApiUrlFromSettings()">Save URL</button>
         <div class="settings-menu-divider"></div>
@@ -429,8 +410,7 @@ function toggleSettingsMenu(){
   const menu = document.getElementById('settings-menu');
   const opening = menu.classList.contains('hidden');
   menu.classList.toggle('hidden');
-  const urlInput = document.getElementById('settings-api-url');
-  if(opening && urlInput) urlInput.value = getApiUrl();
+  if(opening) document.getElementById('settings-api-url').value = getApiUrl();
 }
 document.addEventListener('click', function(e){
   const menu = document.getElementById('settings-menu');
@@ -448,295 +428,7 @@ function saveApiUrlFromSettings(){
   loadData();
 }
 
-/* ===================== PREVIEW MODE — in-browser mock backend ====================
-   This copy is for reviewing the app's features before hosting. Login is skipped and
-   every "api()" call below is answered from an in-memory sample dataset instead of
-   your real Apps Script Web App — nothing here reads or writes your actual Sheet,
-   and nothing you do in this preview is saved anywhere once you close or reload it. */
-const PREVIEW_MODE = true;
-let MOCK_DB = { orders: [], figures: [], sellers: [] };
-let MOCK_SEQ = { orderId: 0, figureId: 0, sellerId: 0, groupBuyId: 0 };
-
-function mockNextId(prefix, seqKey, pad){
-  MOCK_SEQ[seqKey]++;
-  return prefix + '-' + String(MOCK_SEQ[seqKey]).padStart(pad, '0');
-}
-function mockAllocate(total, count, custom){
-  if(custom && custom.length === count) return custom.map(v=>Number(v)||0);
-  if(count <= 0) return [];
-  const base = Math.floor((total/count)*100)/100;
-  const arr = [];
-  for(let i=0;i<count;i++){ arr.push(i===count-1 ? Math.round((total - base*(count-1))*100)/100 : base); }
-  return arr;
-}
-function mockAddSeller(name){
-  if(!name) return '';
-  let s = MOCK_DB.sellers.find(x=>x['Seller Name']===name);
-  if(s) return s['Seller ID'];
-  const id = mockNextId('SEL','sellerId',3);
-  MOCK_DB.sellers.push({ 'Seller ID': id, 'Seller Name': name });
-  return id;
-}
-function mockFindOrder(orderId){ return MOCK_DB.orders.find(o=>o['Order ID']===orderId); }
-function mockFiguresOf(orderId){ return MOCK_DB.figures.filter(f=>f['Order ID']===orderId); }
-
-function seedMockData(){
-  MOCK_DB.sellers = [
-    { 'Seller ID':'SEL-001', 'Seller Name':'ESPADA' },
-    { 'Seller ID':'SEL-002', 'Seller Name':'Funko Pie' },
-    { 'Seller ID':'SEL-003', 'Seller Name':'Kawaii Katta' },
-    { 'Seller ID':'SEL-004', 'Seller Name':'Ninja Studio' }
-  ];
-  MOCK_DB.orders = [
-    { 'Order ID':'ORD-000001','Purchase Type':'Individual Figure','Seller ID':'SEL-001','Seller':'ESPADA','Order Date':'2024-03-12','Total Price':1800,'Paid Amount':1800,'Due Amount':0,'Payment Status':'Paid','Delivery Status':'Delivered','Delivery Date':'','Group Buy ID':'','Group Buy Name':'','Notes':'','Created At':'','Updated At':'' },
-    { 'Order ID':'ORD-000002','Purchase Type':'Individual Figure','Seller ID':'SEL-002','Seller':'Funko Pie','Order Date':'2024-11-05','Total Price':2499,'Paid Amount':1200,'Due Amount':1299,'Payment Status':'Payment Pending','Delivery Status':'Ordered','Delivery Date':'','Group Buy ID':'','Group Buy Name':'','Notes':'','Created At':'','Updated At':'' },
-    { 'Order ID':'ORD-000003','Purchase Type':'Individual Figure','Seller ID':'SEL-003','Seller':'Kawaii Katta','Order Date':'2025-05-20','Total Price':1899,'Paid Amount':1899,'Due Amount':0,'Payment Status':'Paid','Delivery Status':'In transit','Delivery Date':'','Group Buy ID':'','Group Buy Name':'','Notes':'','Created At':'','Updated At':'' },
-    { 'Order ID':'ORD-000004','Purchase Type':'Individual Figure','Seller ID':'SEL-004','Seller':'Ninja Studio','Order Date':'2026-08-01','Total Price':2300,'Paid Amount':1150,'Due Amount':1150,'Payment Status':'Payment Pending','Delivery Status':'Ordered','Delivery Date':'','Group Buy ID':'','Group Buy Name':'','Notes':'','Created At':'','Updated At':'' },
-    { 'Order ID':'ORD-000005','Purchase Type':'Group Buy / Bundle','Seller ID':'SEL-001','Seller':'ESPADA','Order Date':'2026-08-10','Total Price':6000,'Paid Amount':3000,'Due Amount':3000,'Payment Status':'Payment Pending','Delivery Status':'Ordered','Delivery Date':'','Group Buy ID':'GB-000001','Group Buy Name':'MHA Squad','Notes':'','Created At':'','Updated At':'' },
-    { 'Order ID':'ORD-000006','Purchase Type':'Group Buy / Bundle','Seller ID':'SEL-002','Seller':'Funko Pie','Order Date':'2026-08-20','Total Price':3600,'Paid Amount':3600,'Due Amount':0,'Payment Status':'Paid','Delivery Status':'Ordered','Delivery Date':'','Group Buy ID':'GB-000002','Group Buy Name':'One Piece Crew','Notes':'','Created At':'','Updated At':'' }
-  ];
-  MOCK_DB.figures = [
-    { 'Figure ID':'FIG-000001','Order ID':'ORD-000001','Figurine Name':'Goku','Allocated Price':1800,'Image URL':'','Drive File ID':'','Delivery Status':'Delivered','Seller':'ESPADA','IP':'Dragon Ball','Product Type':'Banpresto','Created At':'','Updated At':'' },
-    { 'Figure ID':'FIG-000002','Order ID':'ORD-000002','Figurine Name':'Saitama','Allocated Price':2499,'Image URL':'','Drive File ID':'','Delivery Status':'Ordered','Seller':'Funko Pie','IP':'One Punch Man','Product Type':'Funko Pop','Created At':'','Updated At':'' },
-    { 'Figure ID':'FIG-000003','Order ID':'ORD-000003','Figurine Name':'Batman','Allocated Price':1899,'Image URL':'','Drive File ID':'','Delivery Status':'In transit','Seller':'Kawaii Katta','IP':'DC','Product Type':'Funko Pop','Created At':'','Updated At':'' },
-    { 'Figure ID':'FIG-000004','Order ID':'ORD-000004','Figurine Name':'Mystery Figure (needs tagging)','Allocated Price':2300,'Image URL':'','Drive File ID':'','Delivery Status':'Ordered','Seller':'Ninja Studio','IP':'','Product Type':'','Created At':'','Updated At':'' },
-    { 'Figure ID':'FIG-000005','Order ID':'ORD-000005','Figurine Name':'Deku','Allocated Price':2200,'Image URL':'','Drive File ID':'','Delivery Status':'Delivered','Seller':'ESPADA','IP':'MHA','Product Type':'Banpresto','Created At':'','Updated At':'' },
-    { 'Figure ID':'FIG-000006','Order ID':'ORD-000005','Figurine Name':'Bakugo','Allocated Price':2000,'Image URL':'','Drive File ID':'','Delivery Status':'In transit','Seller':'ESPADA','IP':'MHA','Product Type':'Banpresto','Created At':'','Updated At':'' },
-    { 'Figure ID':'FIG-000007','Order ID':'ORD-000005','Figurine Name':'Uraraka','Allocated Price':1800,'Image URL':'','Drive File ID':'','Delivery Status':'Ordered','Seller':'ESPADA','IP':'MHA','Product Type':'Banpresto','Created At':'','Updated At':'' },
-    { 'Figure ID':'FIG-000008','Order ID':'ORD-000006','Figurine Name':'Luffy','Allocated Price':1800,'Image URL':'','Drive File ID':'','Delivery Status':'Ordered','Seller':'Funko Pie','IP':'One Piece','Product Type':'Funko Pop','Created At':'','Updated At':'' },
-    { 'Figure ID':'FIG-000009','Order ID':'ORD-000006','Figurine Name':'Zoro','Allocated Price':1800,'Image URL':'','Drive File ID':'','Delivery Status':'Ordered','Seller':'Funko Pie','IP':'One Piece','Product Type':'Funko Pop','Created At':'','Updated At':'' }
-  ];
-  MOCK_SEQ = { orderId: 6, figureId: 9, sellerId: 4, groupBuyId: 2 };
-}
-seedMockData();
-
-function mockApi(action, payload){
-  const now = new Date().toISOString();
-  switch(action){
-    case 'login':
-      return { ok:true, token:'preview-token' };
-    case 'ping':
-      return { ok:true };
-    case 'getAll':
-      return { ok:true, orders: MOCK_DB.orders, figures: MOCK_DB.figures, sellers: MOCK_DB.sellers };
-    case 'addSeller':
-      return { ok:true, sellerId: mockAddSeller(payload.name) };
-    case 'uploadImage':
-      // No real Drive in preview — just echo back the picked image's data URL so it still shows on screen.
-      return { ok:true, url: payload.base64Data, fileId: 'mock-'+Date.now() };
-    case 'createOrder': {
-      const sellerId = mockAddSeller(payload.seller);
-      const orderId = mockNextId('ORD','orderId',6);
-      const total = Number(payload.totalPrice||0);
-      const paid = Number(payload.paidAmount||0);
-      const due = Math.round((total-paid)*100)/100;
-      const paymentStatus = due<=0 ? 'Paid' : 'Payment Pending';
-      const isGroup = payload.purchaseType === 'Group Buy / Bundle';
-      const groupBuyId = isGroup ? mockNextId('GB','groupBuyId',6) : '';
-      MOCK_DB.orders.push({
-        'Order ID': orderId, 'Purchase Type': payload.purchaseType, 'Seller ID': sellerId, 'Seller': payload.seller,
-        'Order Date': payload.orderDate||'', 'Total Price': total, 'Paid Amount': paid, 'Due Amount': due,
-        'Payment Status': paymentStatus, 'Delivery Status': payload.deliveryStatus||'Ordered',
-        'Delivery Date': payload.deliveryDate||'', 'Group Buy ID': groupBuyId,
-        'Group Buy Name': isGroup ? (payload.groupBuyName||'') : '', 'Notes': payload.notes||'',
-        'Created At': now, 'Updated At': now
-      });
-      const figureIds = []; const figureNames = [];
-      if(isGroup){
-        const figs = payload.figures || [];
-        const custom = payload.splitEqually === false ? figs.map(f=>f.allocatedPrice) : null;
-        const allocations = mockAllocate(total, figs.length, custom);
-        figs.forEach((f,i)=>{
-          const fid = mockNextId('FIG','figureId',6);
-          MOCK_DB.figures.push({
-            'Figure ID': fid, 'Order ID': orderId, 'Figurine Name': f.name, 'Allocated Price': allocations[i],
-            'Image URL': f.imageUrl||'', 'Drive File ID': f.driveFileId||'', 'Delivery Status': f.deliveryStatus||payload.deliveryStatus||'Ordered',
-            'Seller': payload.seller, 'IP': f.ip||'', 'Product Type': f.productType||'', 'Created At': now, 'Updated At': now
-          });
-          figureIds.push(fid); figureNames.push(f.name);
-        });
-      } else {
-        const fid = mockNextId('FIG','figureId',6);
-        MOCK_DB.figures.push({
-          'Figure ID': fid, 'Order ID': orderId, 'Figurine Name': payload.figurineName, 'Allocated Price': total,
-          'Image URL': payload.imageUrl||'', 'Drive File ID': payload.driveFileId||'', 'Delivery Status': payload.deliveryStatus||'Ordered',
-          'Seller': payload.seller, 'IP': payload.ip||'', 'Product Type': payload.productType||'', 'Created At': now, 'Updated At': now
-        });
-        figureIds.push(fid); figureNames.push(payload.figurineName);
-      }
-      return { ok:true, orderId, figureIds, figureNames, groupBuyId };
-    }
-    case 'updateOrder': {
-      const o = mockFindOrder(payload.orderId);
-      if(!o) return { ok:false, error:'Order not found' };
-      const total = payload.totalPrice !== undefined ? Number(payload.totalPrice) : Number(o['Total Price']);
-      const paid = payload.paidAmount !== undefined ? Number(payload.paidAmount) : Number(o['Paid Amount']);
-      const due = Math.round((total-paid)*100)/100;
-      Object.assign(o, {
-        'Seller': payload.seller !== undefined ? payload.seller : o['Seller'],
-        'Order Date': payload.orderDate !== undefined ? payload.orderDate : o['Order Date'],
-        'Total Price': total, 'Paid Amount': paid, 'Due Amount': due,
-        'Payment Status': due<=0?'Paid':'Payment Pending',
-        'Delivery Status': payload.deliveryStatus !== undefined ? payload.deliveryStatus : o['Delivery Status'],
-        'Notes': payload.notes !== undefined ? payload.notes : o['Notes'],
-        'Group Buy Name': payload.groupBuyName !== undefined ? payload.groupBuyName : o['Group Buy Name'],
-        'Updated At': now
-      });
-      if(o['Purchase Type'] === 'Individual Figure'){
-        const f = mockFiguresOf(o['Order ID'])[0];
-        if(f){
-          if(payload.figurineName !== undefined) f['Figurine Name'] = payload.figurineName;
-          f['Allocated Price'] = total;
-          if(payload.deliveryStatus !== undefined) f['Delivery Status'] = payload.deliveryStatus;
-          if(payload.imageUrl){ f['Image URL'] = payload.imageUrl; f['Drive File ID'] = payload.driveFileId||''; }
-          if(payload.ip !== undefined) f['IP'] = payload.ip;
-          if(payload.productType !== undefined) f['Product Type'] = payload.productType;
-          f['Updated At'] = now;
-        }
-      }
-      return { ok:true };
-    }
-    case 'updateFigure': {
-      const f = MOCK_DB.figures.find(x=>x['Figure ID']===payload.figureId);
-      if(!f) return { ok:false, error:'Figure not found' };
-      if(payload.figurineName !== undefined) f['Figurine Name'] = payload.figurineName;
-      if(payload.allocatedPrice !== undefined) f['Allocated Price'] = Number(payload.allocatedPrice);
-      if(payload.deliveryStatus !== undefined) f['Delivery Status'] = payload.deliveryStatus;
-      if(payload.imageUrl){ f['Image URL'] = payload.imageUrl; f['Drive File ID'] = payload.driveFileId||''; }
-      if(payload.ip !== undefined) f['IP'] = payload.ip;
-      if(payload.productType !== undefined) f['Product Type'] = payload.productType;
-      f['Updated At'] = now;
-      return { ok:true };
-    }
-    case 'deleteOrder': {
-      MOCK_DB.orders = MOCK_DB.orders.filter(o=>o['Order ID']!==payload.orderId);
-      MOCK_DB.figures = MOCK_DB.figures.filter(f=>f['Order ID']!==payload.orderId);
-      return { ok:true };
-    }
-    case 'groupExistingOrders': {
-      const orderIds = payload.orderIds||[];
-      const selected = MOCK_DB.orders.filter(o=>orderIds.includes(o['Order ID']));
-      if(selected.length !== orderIds.length) return { ok:false, error:'Some selected figures were not found' };
-      const seller = payload.seller || selected[0]['Seller'];
-      const sellerId = mockAddSeller(seller);
-      const newOrderId = mockNextId('ORD','orderId',6);
-      const groupBuyId = mockNextId('GB','groupBuyId',6);
-      const total = Number(payload.totalPrice||0);
-      const paid = Number(payload.paidAmount||0);
-      const due = Math.round((total-paid)*100)/100;
-      MOCK_DB.orders.push({
-        'Order ID': newOrderId, 'Purchase Type': 'Group Buy / Bundle', 'Seller ID': sellerId, 'Seller': seller,
-        'Order Date': payload.orderDate||'', 'Total Price': total, 'Paid Amount': paid, 'Due Amount': due,
-        'Payment Status': due<=0?'Paid':'Payment Pending', 'Delivery Status': payload.deliveryStatus||'Ordered',
-        'Delivery Date': '', 'Group Buy ID': groupBuyId, 'Group Buy Name': payload.groupBuyName||'',
-        'Notes': payload.notes||'', 'Created At': now, 'Updated At': now
-      });
-      let figs = [];
-      orderIds.forEach(oid=>{ figs = figs.concat(mockFiguresOf(oid)); });
-      const custom = payload.splitEqually === false ? payload.customAllocations : null;
-      const allocations = mockAllocate(total, figs.length, custom);
-      const figureNames = [];
-      figs.forEach((f,i)=>{
-        f['Order ID'] = newOrderId; f['Allocated Price'] = allocations[i]; f['Seller'] = seller; f['Updated At'] = now;
-        figureNames.push(f['Figurine Name']);
-      });
-      MOCK_DB.orders = MOCK_DB.orders.filter(o=>!orderIds.includes(o['Order ID']));
-      return { ok:true, orderId:newOrderId, groupBuyId, figureCount:figs.length, figureNames };
-    }
-    case 'removeFromBundle': {
-      const f = MOCK_DB.figures.find(x=>x['Figure ID']===payload.figureId);
-      if(!f) return { ok:false, error:'Figure not found' };
-      const bundleOrder = mockFindOrder(f['Order ID']);
-      const bundleFigs = mockFiguresOf(bundleOrder['Order ID']);
-      const bundleTotal = Number(bundleOrder['Total Price']||0);
-      const bundlePaid = Number(bundleOrder['Paid Amount']||0);
-      const share = bundleTotal>0 ? Number(f['Allocated Price'])/bundleTotal : 0;
-      const figPaid = Math.round(bundlePaid*share*100)/100;
-      const figTotal = Number(f['Allocated Price']);
-      const figDue = Math.round((figTotal-figPaid)*100)/100;
-      const newOrderId = mockNextId('ORD','orderId',6);
-      MOCK_DB.orders.push({
-        'Order ID': newOrderId, 'Purchase Type': 'Individual Figure', 'Seller ID': mockAddSeller(f['Seller']), 'Seller': f['Seller'],
-        'Order Date': bundleOrder['Order Date'], 'Total Price': figTotal, 'Paid Amount': figPaid, 'Due Amount': figDue,
-        'Payment Status': figDue<=0?'Paid':'Payment Pending', 'Delivery Status': f['Delivery Status']||'Ordered',
-        'Delivery Date': '', 'Group Buy ID': '', 'Group Buy Name': '', 'Notes': 'Removed from bundle '+bundleOrder['Group Buy ID'],
-        'Created At': now, 'Updated At': now
-      });
-      f['Order ID'] = newOrderId; f['Updated At'] = now;
-      const remaining = bundleFigs.filter(x=>x['Figure ID']!==f['Figure ID']);
-      let bundleDissolved = false;
-      if(remaining.length <= 1){
-        bundleDissolved = true;
-        if(remaining.length === 1){
-          const last = remaining[0];
-          const lastOrderId = mockNextId('ORD','orderId',6);
-          const lastPaid = Math.round((bundlePaid-figPaid)*100)/100;
-          const lastTotal = Number(last['Allocated Price']);
-          const lastDue = Math.round((lastTotal-lastPaid)*100)/100;
-          MOCK_DB.orders.push({
-            'Order ID': lastOrderId, 'Purchase Type':'Individual Figure', 'Seller ID': mockAddSeller(last['Seller']), 'Seller': last['Seller'],
-            'Order Date': bundleOrder['Order Date'], 'Total Price': lastTotal, 'Paid Amount': lastPaid, 'Due Amount': lastDue,
-            'Payment Status': lastDue<=0?'Paid':'Payment Pending', 'Delivery Status': last['Delivery Status']||'Ordered',
-            'Delivery Date':'', 'Group Buy ID':'', 'Group Buy Name':'', 'Notes':'Bundle dissolved', 'Created At': now, 'Updated At': now
-          });
-          last['Order ID'] = lastOrderId; last['Updated At'] = now;
-        }
-        MOCK_DB.orders = MOCK_DB.orders.filter(o=>o['Order ID'] !== bundleOrder['Order ID']);
-      } else {
-        bundleOrder['Total Price'] = Math.round((bundleTotal-figTotal)*100)/100;
-        bundleOrder['Paid Amount'] = Math.round((bundlePaid-figPaid)*100)/100;
-        bundleOrder['Due Amount'] = Math.round((bundleOrder['Total Price']-bundleOrder['Paid Amount'])*100)/100;
-        bundleOrder['Payment Status'] = bundleOrder['Due Amount']<=0?'Paid':'Payment Pending';
-        bundleOrder['Updated At'] = now;
-      }
-      return { ok:true, newOrderId, figureId: f['Figure ID'], bundleDissolved };
-    }
-    case 'ungroupBundle': {
-      const bundleOrder = mockFindOrder(payload.orderId);
-      if(!bundleOrder) return { ok:false, error:'Bundle not found' };
-      const figs = mockFiguresOf(bundleOrder['Order ID']);
-      const bundleTotal = Number(bundleOrder['Total Price']||0);
-      const bundlePaid = Number(bundleOrder['Paid Amount']||0);
-      const newOrderIds = [];
-      let allocatedPaidSum = 0;
-      figs.forEach((f,i)=>{
-        const share = bundleTotal>0 ? Number(f['Allocated Price'])/bundleTotal : 0;
-        let figPaid = Math.round(bundlePaid*share*100)/100;
-        if(i === figs.length-1) figPaid = Math.round((bundlePaid-allocatedPaidSum)*100)/100;
-        allocatedPaidSum += figPaid;
-        const figTotal = Number(f['Allocated Price']);
-        const figDue = Math.round((figTotal-figPaid)*100)/100;
-        const newOrderId = mockNextId('ORD','orderId',6);
-        MOCK_DB.orders.push({
-          'Order ID': newOrderId, 'Purchase Type':'Individual Figure', 'Seller ID': mockAddSeller(f['Seller']), 'Seller': f['Seller'],
-          'Order Date': bundleOrder['Order Date'], 'Total Price': figTotal, 'Paid Amount': figPaid, 'Due Amount': figDue,
-          'Payment Status': figDue<=0?'Paid':'Payment Pending', 'Delivery Status': f['Delivery Status']||'Ordered',
-          'Delivery Date':'', 'Group Buy ID':'', 'Group Buy Name':'', 'Notes':'Ungrouped from '+bundleOrder['Group Buy ID'],
-          'Created At': now, 'Updated At': now
-        });
-        f['Order ID'] = newOrderId; f['Updated At'] = now;
-        newOrderIds.push(newOrderId);
-      });
-      MOCK_DB.orders = MOCK_DB.orders.filter(o=>o['Order ID'] !== bundleOrder['Order ID']);
-      return { ok:true, newOrderIds, figureCount: figs.length };
-    }
-    case 'bulkSetCategory': {
-      const ids = payload.figureIds||[];
-      const field = payload.field;
-      const value = payload.value;
-      let count = 0;
-      MOCK_DB.figures.forEach(f=>{
-        if(ids.includes(f['Figure ID'])){ f[field] = value; f['Updated At'] = now; count++; }
-      });
-      return { ok:true, updatedCount: count };
-    }
-    default:
-      return { ok:false, error:'Unknown action in preview mode: '+action };
-  }
-}
-
 async function api(action, payload, method){
-  if(PREVIEW_MODE) return mockApi(action, payload);
   const url = getApiUrl();
   if(!url){ toast('Set the Apps Script Web App URL first'); throw new Error('no api url'); }
   const token = localStorage.getItem(LS.token) || '';
@@ -757,14 +449,6 @@ async function doLogin(){
   const errEl = document.getElementById('login-err');
   errEl.textContent = '';
   if(!getApiUrl()){ errEl.textContent = 'Set the Apps Script URL below first.'; return; }
-  if(PREVIEW_MODE){
-    // Preview copy — no real backend to authenticate against, so any password is accepted.
-    // Routes through the same mock login action a real login would use, rather than making a real network call.
-    const data = mockApi('login', { password: pw });
-    if(data.ok){ localStorage.setItem(LS.token, data.token); showApp(); }
-    else{ errEl.textContent = data.error || 'Invalid password'; }
-    return;
-  }
   try{
     const res = await fetch(getApiUrl(), {
       method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
@@ -1607,7 +1291,7 @@ function toast(msg){
 const modalRoot = document.getElementById('modal-root');
 function closeModal(){ modalRoot.innerHTML=''; }
 
-/* ---- Admin panel: add/remove custom IP & Product Type filter options (local to this browser — never touches the Sheet) ---- */
+/* ---- Admin panel: add/remove custom filter options (local to this browser — never touches the Sheet) ---- */
 const ADMIN_KINDS = {
   ip: { lsKey: 'customIp', label: 'IP / Series', presets: IP_PRESETS, optionsFn: ()=>ipOptionsList() },
   type: { lsKey: 'customType', label: 'Product Type', presets: PRODUCT_TYPE_OPTIONS, optionsFn: ()=>productTypeOptionsList() },
