@@ -3,22 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Figure Vault — Order Tracker</title>
+<title>Figure Vault — PREVIEW (sample data, not for hosting)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --ink:#1b1a1f; --charcoal:#232228; --charcoal-2:#2c2b32;
-  --off-white:#f7f2ea; --paper:#fffaf2; --line:#e7ddcb;
-  --accent:#e8452c; --accent-2:#f7b733; --accent-3:#2fb6a3;
-  --ok:#2fae63; --warn:#e0a92b; --danger:#e8452c;
-  --text-dim:#6f6a63; --shadow: 0 10px 30px rgba(20,18,15,.12);
+  --ink:#15171c; --charcoal:#1e2128; --charcoal-2:#262a33;
+  --off-white:#f4f5f7; --paper:#ffffff; --line:#e4e6eb;
+  --accent:#4f46e5; --accent-2:#f2b134; --accent-3:#0d9488;
+  --ok:#16a34a; --warn:#d97706; --danger:#dc2626;
+  --text-dim:#6b7280; --shadow: 0 10px 30px rgba(21,23,28,.08);
   --radius:14px;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--off-white);color:var(--ink);font-family:Inter,system-ui,sans-serif;
   background-image:
-    radial-gradient(circle at 1px 1px, rgba(27,26,31,.05) 1px, transparent 0);
+    radial-gradient(circle at 1px 1px, rgba(21,23,28,.05) 1px, transparent 0);
   background-size:14px 14px;}
 h1,h2,h3,.display{font-family:'Bebas Neue',Inter,sans-serif;letter-spacing:.02em;}
 .hidden{display:none!important}
@@ -40,17 +40,17 @@ input,select,textarea{font-family:inherit}
 #app{min-height:100vh}
 header.top{background:var(--charcoal);color:var(--off-white);padding:18px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20;box-shadow:var(--shadow);}
 header.top .brand{display:flex;align-items:center;gap:10px}
-header.top .brand .dot{width:12px;height:12px;background:var(--accent);border-radius:50%;box-shadow:0 0 0 4px rgba(232,69,44,.25)}
+header.top .brand .dot{width:12px;height:12px;background:var(--accent);border-radius:50%;box-shadow:0 0 0 4px rgba(79,70,229,.25)}
 header.top h1{font-size:1.7rem;margin:0;color:var(--off-white)}
 header.top .actions{display:flex;gap:10px;align-items:center}
 .btn{border:none;border-radius:10px;padding:10px 16px;font-weight:700;font-size:.85rem;transition:.15s}
 .btn-primary{background:var(--accent);color:#fff}
-.btn-primary:hover{background:#cf3a24}
+.btn-primary:hover{background:#4338ca}
 .btn-ghost{background:transparent;color:var(--off-white);border:1px solid rgba(255,255,255,.25)}
 .btn-ghost:hover{background:rgba(255,255,255,.08)}
 /* .btn-ghost is styled for the dark header — on a light modal/select-bar background it needs dark text instead */
 .modal .btn-ghost{color:var(--ink);border:1px solid var(--line)}
-.modal .btn-ghost:hover{background:#f1ede4}
+.modal .btn-ghost:hover{background:#eef0f3}
 .btn-dark{background:var(--ink);color:#fff}
 .btn-sm{padding:6px 10px;font-size:.75rem;border-radius:8px}
 
@@ -65,44 +65,92 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
 .stat-card.ok .value{color:var(--ok)}
 .stat-card.warn .value{color:var(--warn)}
 
+/* ===== Collection hero dashboard (premium dark collector panel) ===== */
+.hero-dash{
+  --hd-bg:#1b1815; --hd-bg2:#221e19; --hd-ink:#f5f1e8; --hd-muted:#a79d8c;
+  --hd-gold:#c9a04e; --hd-gold-soft:rgba(201,160,78,.16); --hd-line:rgba(245,241,232,.08);
+  background:linear-gradient(165deg,var(--hd-bg),#151310);
+  border-radius:20px; padding:28px 26px 26px; margin-bottom:28px;
+  box-shadow:0 20px 50px rgba(10,8,5,.35);
+}
+.hero-dash .hd-filtered{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--hd-gold);font-weight:700;margin:-8px 0 16px}
+.kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--hd-line);border-radius:14px;overflow:hidden}
+.kpi-card{background:var(--hd-bg2);padding:18px 16px;min-width:0}
+.kpi-card .kpi-label{font-size:.64rem;text-transform:uppercase;letter-spacing:.06em;color:var(--hd-muted);font-weight:700;line-height:1.3;min-height:2.6em;display:flex;align-items:flex-end}
+.kpi-card .kpi-value{font-family:'Bebas Neue';font-size:2.1rem;color:var(--hd-ink);margin-top:8px;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi-card.hero .kpi-value{color:var(--hd-gold)}
+.spend-panel{margin-top:22px;padding-top:22px;border-top:1px solid var(--hd-line)}
+.spend-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:6px}
+.spend-title{font-family:'Bebas Neue';font-size:1.4rem;color:var(--hd-ink);letter-spacing:.02em}
+.spend-milestones{font-size:.8rem;color:var(--hd-muted);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.spend-milestones b{color:var(--hd-gold);font-weight:700}
+.spend-chart-wrap{margin-top:14px}
+.spend-svg{display:block;width:100%;height:180px}
+.spend-bars-svg{display:block;width:100%;height:56px;margin-top:2px}
+.spend-x-labels{display:flex;justify-content:space-between;font-size:.68rem;color:var(--hd-muted);margin-top:6px;padding:0 1px}
+.spend-empty{color:var(--hd-muted);font-size:.85rem;padding:30px 0;text-align:center}
+@media (max-width:900px){ .kpi-grid{grid-template-columns:repeat(3,1fr)} }
+@media (max-width:520px){ .kpi-grid{grid-template-columns:repeat(2,1fr)} .kpi-card .kpi-value{font-size:1.7rem} }
+
 /* ===== Toolbar ===== */
-.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:18px;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;box-shadow:var(--shadow)}
-.toolbar select, .toolbar input[type=text]{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:.85rem;background:#fff}
-.toolbar .search{flex:1;min-width:180px}
-.view-toggle{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-left:auto}
-.view-toggle button{background:#fff;border:none;padding:8px 14px;font-size:.85rem;font-weight:600;color:var(--text-dim)}
+.toolbar{display:flex;flex-direction:column;gap:12px;margin-bottom:18px;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.toolbar select, .toolbar input[type=text]{height:38px;box-sizing:border-box;padding:0 12px;border:1px solid var(--line);border-radius:9px;font-size:.85rem;background:#fff;color:var(--ink)}
+.toolbar select{cursor:pointer}
+.toolbar .search{flex:1 1 260px;min-width:180px;max-width:360px}
+.toolbar .btn{height:38px;box-sizing:border-box;display:inline-flex;align-items:center}
+.toolbar-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.toolbar-row.between{justify-content:space-between}
+.toolbar-group{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.filter-pills{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.view-toggle{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;height:38px;box-sizing:border-box}
+.view-toggle button{background:#fff;border:none;padding:0 14px;font-size:.85rem;font-weight:600;color:var(--text-dim);height:100%}
+.view-toggle button.active{background:var(--ink);color:#fff}
+
+
+/* ===== Toolbar ===== */
+.toolbar{display:flex;flex-direction:column;gap:12px;margin-bottom:18px;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.toolbar select, .toolbar input[type=text]{height:38px;box-sizing:border-box;padding:0 12px;border:1px solid var(--line);border-radius:9px;font-size:.85rem;background:#fff;color:var(--ink)}
+.toolbar select{cursor:pointer}
+.toolbar .search{flex:1 1 260px;min-width:180px;max-width:360px}
+.toolbar .btn{height:38px;box-sizing:border-box;display:inline-flex;align-items:center}
+.toolbar-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.toolbar-row.between{justify-content:space-between}
+.toolbar-group{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.filter-pills{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.view-toggle{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;height:38px;box-sizing:border-box}
+.view-toggle button{background:#fff;border:none;padding:0 14px;font-size:.85rem;font-weight:600;color:var(--text-dim);height:100%}
 .view-toggle button.active{background:var(--ink);color:#fff}
 
 /* ===== Gallery ===== */
 #gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px}
 .card{background:var(--paper);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--line);position:relative;transition:.15s;cursor:pointer}
 .card:hover{transform:translateY(-3px)}
-.card .img-wrap{aspect-ratio:1/1;background:linear-gradient(135deg,#eee,#ddd);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+.card .img-wrap{aspect-ratio:1/1;background:linear-gradient(135deg,#edeff2,#d8dbe0);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
 .card .img-wrap img{width:100%;height:100%;object-fit:cover}
-.card .img-wrap .ph{font-family:'Bebas Neue';color:#b8b2a4;font-size:1.1rem}
+.card .img-wrap .ph{font-family:'Bebas Neue';color:#9ca3af;font-size:1.1rem}
 .badge{position:absolute;top:8px;left:8px;background:var(--accent-2);color:var(--ink);font-size:.65rem;font-weight:800;padding:3px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:.03em}
 .card .body{padding:12px 14px}
 .card h3{margin:0 0 4px;font-size:1rem;font-family:Inter;font-weight:700}
 .card .meta{font-size:.78rem;color:var(--text-dim);margin-bottom:8px}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chip{font-size:.68rem;font-weight:800;padding:3px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.03em}
-.chip.paid{background:#dff4e6;color:var(--ok)}
-.chip.pending{background:#fdecd8;color:#b5730f}
-.chip.delivered{background:#dff4e6;color:var(--ok)}
-.chip.shipped,.chip.intransit{background:#e3ecfb;color:#2f5fb6}
-.chip.ordered{background:#eee;color:#555}
-.chip.cancelled{background:#fbe1e1;color:var(--danger)}
+.chip.paid{background:#dcfce7;color:var(--ok)}
+.chip.pending{background:#fef3c7;color:#b45309}
+.chip.delivered{background:#dcfce7;color:var(--ok)}
+.chip.shipped,.chip.intransit{background:#dbeafe;color:#2563eb}
+.chip.ordered{background:#edeff2;color:#4b5563}
+.chip.cancelled{background:#fee2e2;color:var(--danger)}
 
 /* ===== Table ===== */
 .table-wrap{overflow-x:auto;background:var(--paper);border-radius:var(--radius);border:1px solid var(--line);box-shadow:var(--shadow)}
 table{width:100%;border-collapse:collapse;font-size:.85rem}
 th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
 th{background:var(--charcoal);color:var(--off-white);font-size:.72rem;text-transform:uppercase;letter-spacing:.04em}
-tr:hover td{background:#fbf6ec}
+tr:hover td{background:#f7f8fa}
 td img{width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:middle}
 
 /* ===== Modal ===== */
-.overlay{position:fixed;inset:0;background:rgba(20,18,15,.55);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;z-index:50}
+.overlay{position:fixed;inset:0;background:rgba(21,23,28,.55);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;z-index:50}
 .modal{background:var(--paper);border-radius:var(--radius);max-width:640px;width:100%;box-shadow:var(--shadow);padding:24px 26px 28px}
 .modal h2{margin:0 0 4px;font-size:1.8rem}
 .modal .sub{color:var(--text-dim);font-size:.85rem;margin-bottom:18px}
@@ -110,11 +158,11 @@ td img{width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:
 .field label{display:block;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-dim);margin-bottom:5px}
 .field input, .field select, .field textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-size:.9rem}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.figure-row{border:1px dashed var(--line);border-radius:10px;padding:12px;margin-bottom:10px;position:relative;background:#fffdf8}
+.figure-row{border:1px dashed var(--line);border-radius:10px;padding:12px;margin-bottom:10px;position:relative;background:#fafbfc}
 .figure-row .rm{position:absolute;top:8px;right:8px;background:none;border:none;color:var(--danger);font-weight:800}
 .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
 .toggle{display:flex;align-items:center;gap:8px;font-size:.85rem;font-weight:600}
-.readonly{background:#f1ede4;color:var(--text-dim)}
+.readonly{background:#eef0f3;color:var(--text-dim)}
 .close-x{position:absolute;top:14px;right:16px;background:none;border:none;font-size:1.4rem;color:var(--text-dim)}
 .gb-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:.85rem}
 .gb-table th,.gb-table td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}
@@ -125,18 +173,18 @@ td img{width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 20px;border-radius:10px;font-size:.85rem;z-index:100;box-shadow:var(--shadow)}
 
 /* ===== Image picker ===== */
-.img-picker{border:2px dashed var(--line);border-radius:10px;aspect-ratio:1/1;max-width:160px;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:text;background:#fffdf8;outline:none;transition:.15s}
-.img-picker.picker-focused{border-color:var(--accent);border-style:solid;background:#fff5f0;box-shadow:0 0 0 3px rgba(232,69,44,.15)}
+.img-picker{border:2px dashed var(--line);border-radius:10px;aspect-ratio:1/1;max-width:160px;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:text;background:#fafbfc;outline:none;transition:.15s}
+.img-picker.picker-focused{border-color:var(--accent);border-style:solid;background:#eef2ff;box-shadow:0 0 0 3px rgba(79,70,229,.15)}
 .img-picker .ph-txt{font-size:.72rem;color:var(--text-dim);text-align:center;padding:8px}
 .img-picker img{width:100%;height:100%;object-fit:cover}
 .img-picker-wrap{display:flex;flex-direction:column;gap:6px;max-width:160px}
 .img-picker-browse{width:100%}
 .img-picker-hint{font-size:.68rem;color:var(--text-dim)}
 .adjust-stage{display:flex;justify-content:center;margin:14px 0}
-.adjust-stage canvas{border-radius:12px;cursor:grab;touch-action:none;background:#eee}
+.adjust-stage canvas{border-radius:12px;cursor:grab;touch-action:none;background:#edeff2}
 .adjust-controls{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:6px}
 .adjust-controls input[type=range]{width:140px}
-.view-figure-img{width:100%;max-height:360px;object-fit:contain;border-radius:12px;margin:10px 0;background:#eee;cursor:zoom-in}
+.view-figure-img{width:100%;max-height:360px;object-fit:contain;border-radius:12px;margin:10px 0;background:#edeff2;cursor:zoom-in}
 
 /* ===== Settings menu ===== */
 .settings-menu{position:absolute;top:calc(100% + 8px);right:0;background:var(--paper);color:var(--ink);border-radius:12px;box-shadow:var(--shadow);padding:14px;width:260px;z-index:30;text-align:left}
@@ -144,7 +192,75 @@ td img{width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:
 .settings-menu input{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:.8rem}
 .settings-menu-divider{height:1px;background:var(--line);margin:12px 0}
 .btn-ghost-dark{background:transparent;color:var(--danger);border:1px solid var(--line)}
-.btn-ghost-dark:hover{background:#fbe1e1}
+.btn-ghost-dark:hover{background:#fee2e2}
+
+/* ===== Multi-select filter dropdowns ===== */
+.msel{position:relative}
+.msel-btn{background:#fff;border:1px solid var(--line);border-radius:999px;padding:0 14px;height:38px;font-size:.82rem;font-weight:600;color:var(--ink);display:inline-flex;align-items:center;gap:6px;white-space:nowrap;transition:border-color .15s,background .15s,color .15s}
+.msel-btn:hover{border-color:#c7cbd4;background:#fafbfc}
+.msel-btn.active{border-color:var(--accent-3);color:#0f766e;background:#ccfbf1}
+.msel-btn .care{opacity:.55;font-size:.7rem;margin-left:1px}
+.msel-count{background:var(--accent-3);color:#fff;border-radius:999px;min-width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;font-size:.68rem;font-weight:800}
+.msel-panel{position:fixed;background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:10px;width:230px;max-height:290px;overflow-y:auto;z-index:45}
+.msel-actions{display:flex;justify-content:space-between;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.msel-actions button{background:none;border:none;color:var(--accent);font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.03em;cursor:pointer}
+.msel-option{display:flex;align-items:center;gap:8px;padding:5px 2px;font-size:.85rem;cursor:pointer}
+.msel-option input{accent-color:var(--accent)}
+.msel-empty{font-size:.78rem;color:var(--text-dim);padding:6px 2px}
+
+/* ===== Dashboard breakdown bars ===== */
+.bar-section{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);margin-bottom:16px}
+.bar-section h3{margin:0 0 12px;font-size:1.3rem}
+.bar-row{margin-bottom:10px}
+.bar-row:last-child{margin-bottom:0}
+.bar-row .bar-label{display:flex;justify-content:space-between;gap:10px;font-size:.8rem;margin-bottom:4px}
+.bar-row .bar-label .l{color:var(--ink);font-weight:600}
+.bar-row .bar-label .l .n{color:var(--text-dim);font-weight:400}
+.bar-row .bar-label .pct{color:var(--text-dim);font-weight:400}
+.bar-track{background:#eaecf0;border-radius:6px;height:10px;overflow:hidden}
+.bar-fill{height:100%;border-radius:6px;background:var(--accent)}
+
+/* ===== Two-up dashboard row (count vs value pairs) ===== */
+.insight-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.insight-row .bar-section{margin-bottom:0}
+@media (max-width:760px){ .insight-row{grid-template-columns:1fr} }
+
+/* ===== Donut chart (Spend by Product Type) ===== */
+.donut-section{padding-bottom:16px}
+.donut-wrap{display:flex;gap:28px;align-items:center;flex-wrap:wrap}
+.donut-chart-holder{position:relative;width:160px;height:160px;flex:0 0 auto}
+.donut-svg{width:100%;height:100%;display:block}
+.donut-seg{transition:stroke-width .15s}
+.donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none}
+.donut-center-value{font-family:'Bebas Neue';font-size:1.35rem;color:var(--ink);letter-spacing:.01em}
+.donut-center-label{font-size:.64rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-top:2px}
+.donut-legend{flex:1;min-width:190px;display:flex;flex-direction:column;gap:9px}
+.donut-legend-row{display:flex;align-items:center;gap:8px;font-size:.82rem}
+.donut-legend-row .l{flex:1;color:var(--ink);font-weight:600}
+.donut-legend-row .l .n{color:var(--text-dim);font-weight:400}
+.donut-legend-row .v{color:var(--ink);font-weight:600;white-space:nowrap;text-align:right}
+.donut-legend-row .v .n{color:var(--text-dim);font-weight:400;margin-left:4px}
+.donut-swatch{width:10px;height:10px;border-radius:3px;flex:0 0 auto}
+
+/* ===== Insight tables (Seller / IP breakdown) ===== */
+.insight-section{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px 6px;box-shadow:var(--shadow);margin-bottom:16px}
+.insight-section h3{margin:0 0 4px;font-size:1.3rem}
+.insight-section .sub{color:var(--text-dim);font-size:.78rem;margin-bottom:14px}
+.insight-table-wrap{overflow-x:auto;margin:0 -18px;padding:0 18px 14px}
+.insight-table{width:100%;border-collapse:collapse;font-size:.82rem;min-width:640px}
+.insight-table th{background:var(--off-white);color:var(--text-dim);font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;font-weight:700;text-align:right;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap;position:sticky;top:0}
+.insight-table th:first-child{text-align:left;border-top-left-radius:8px}
+.insight-table th.grp-start{border-left:1px solid var(--line)}
+.insight-table td{padding:9px 12px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--ink)}
+.insight-table td.grp-start{border-left:1px solid var(--line)}
+.insight-table td:first-child{text-align:left;font-weight:600}
+.insight-table tbody tr:hover td{background:var(--off-white)}
+.insight-table td.due-cell.has-due{color:var(--warn);font-weight:700}
+.insight-table .cnt{color:var(--text-dim);font-weight:400}
+.insight-table .status-empty{color:#c7cbd4}
+.insight-table tfoot td{font-weight:700;border-top:2px solid var(--ink);border-bottom:none;background:var(--off-white)}
+.insight-table tfoot td:first-child{border-bottom-left-radius:8px}
+.insight-table-empty{color:var(--text-dim);font-size:.85rem;padding:16px 0 20px;text-align:center}
 
 /* ===== Selection mode (group existing figures into a bundle) ===== */
 .card.selected-card{outline:3px solid var(--accent);outline-offset:-3px}
@@ -156,6 +272,9 @@ td img{width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:
 </style>
 </head>
 <body>
+<div style="position:sticky;top:0;z-index:200;background:#3a1f0d;color:#ffe9c7;text-align:center;font-size:.8rem;font-weight:700;padding:8px 14px;letter-spacing:.02em">
+  ⚠ PREVIEW COPY — sample data only. The password gate and "save the Apps Script URL once" flow work the same as the real app, but any password works here and the URL isn't actually used. Do not upload this file to GitHub Pages; deploy the real <code>index.html</code> instead.
+</div>
 
 <div id="login-screen">
   <div class="login-card">
@@ -186,8 +305,11 @@ td img{width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:
       <button class="btn btn-ghost" id="settings-btn" onclick="toggleSettingsMenu()">⚙ Settings</button>
       <div id="settings-menu" class="settings-menu hidden">
         <div class="settings-menu-label">Apps Script Web App URL</div>
+        <div style="font-size:.72rem;color:var(--text-dim);margin:-2px 0 8px">Preview mode — this URL isn't actually used (sample data only), but saving/changing it behaves like the real app.</div>
         <input type="text" id="settings-api-url" placeholder="https://script.google.com/macros/s/xxx/exec">
         <button class="btn btn-sm btn-dark" style="width:100%;margin-top:6px" onclick="saveApiUrlFromSettings()">Save URL</button>
+        <div class="settings-menu-divider"></div>
+        <button class="btn btn-sm btn-dark" style="width:100%" onclick="toggleSettingsMenu(); openAdminPanel()">🛠 Manage Filter Options</button>
         <div class="settings-menu-divider"></div>
         <button class="btn btn-sm btn-ghost-dark" style="width:100%" onclick="logout()">Log out</button>
       </div>
@@ -195,27 +317,30 @@ td img{width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:
   </header>
   <main>
    <div id="page-collection">
-    <div class="dash-grid" id="dashboard"></div>
+    <div class="hero-dash" id="dashboard"></div>
 
     <div class="toolbar">
-      <input class="search" type="text" id="f-search" placeholder="Search figurine, seller, group buy..." oninput="render()">
-      <select id="f-seller" onchange="render()"><option value="">All Sellers</option></select>
-      <select id="f-delivery" onchange="render()">
-        <option value="">All Delivery</option><option>Ordered</option><option>In transit</option><option>Delivered</option>
-      </select>
-      <select id="f-payment" onchange="render()"><option value="">All Payment</option><option value="Paid">Paid</option><option value="Payment Pending">Payment Pending</option></select>
-      <select id="f-type" onchange="render()"><option value="">All Types</option><option value="Individual Figure">Individual</option><option value="Group Buy / Bundle">Group Buy</option></select>
-      <select id="f-ip" onchange="render()"><option value="">All IPs</option></select>
-      <select id="f-sort" onchange="render()">
-        <option value="date-desc">Newest First</option><option value="date-asc">Oldest First</option>
-        <option value="price-desc">Price: High-Low</option><option value="price-asc">Price: Low-High</option>
-        <option value="due-desc">Outstanding: High First</option>
-      </select>
-      <button class="btn btn-sm btn-dark" id="btn-group-mode" onclick="toggleSelectMode()">🔗 Group Figures</button>
-      <button class="btn btn-sm btn-dark" onclick="openBundlesListModal()">📦 Edit Bundles</button>
-      <div class="view-toggle">
-        <button id="btn-gallery" class="active" onclick="setView('gallery')">▦ Gallery</button>
-        <button id="btn-table" onclick="setView('table')">≡ Table</button>
+      <div class="toolbar-row">
+        <input class="search" type="text" id="f-search" placeholder="Search figurine, seller, group buy, IP, type..." oninput="render()">
+        <div class="filter-pills" id="msel-holder-col"></div>
+      </div>
+      <div class="toolbar-row between">
+        <div class="toolbar-group">
+          <select id="f-sort" onchange="render()">
+            <option value="date-desc">Newest First</option><option value="date-asc">Oldest First</option>
+            <option value="price-desc">Price: High-Low</option><option value="price-asc">Price: Low-High</option>
+            <option value="due-desc">Outstanding: High First</option>
+          </select>
+          <button class="btn btn-sm btn-ghost-dark" onclick="resetFilters()">↺ Reset</button>
+        </div>
+        <div class="toolbar-group">
+          <button class="btn btn-sm btn-dark" id="btn-group-mode" onclick="toggleSelectMode()">🔗 Group Figures</button>
+          <button class="btn btn-sm btn-dark" onclick="openBundlesListModal()">📦 Edit Bundles</button>
+          <div class="view-toggle">
+            <button id="btn-gallery" class="active" onclick="setView('gallery')">▦ Gallery</button>
+            <button id="btn-table" onclick="setView('table')">≡ Table</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -241,8 +366,10 @@ td img{width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:
 
    <div id="page-dashboard" class="hidden">
     <div class="toolbar">
-      <select id="db-seller" onchange="renderAnalyticsDashboard()"><option value="">All Sellers</option></select>
-      <select id="db-ip" onchange="renderAnalyticsDashboard()"><option value="">All IPs</option></select>
+      <div class="toolbar-row between">
+        <div class="filter-pills" id="msel-holder-db"></div>
+        <button class="btn btn-sm btn-ghost-dark" onclick="resetDbFilters()">↺ Reset</button>
+      </div>
     </div>
     <div id="analytics-dashboard"></div>
    </div>
@@ -254,10 +381,34 @@ td img{width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:
 <script>
 /* ===================== Config & Auth ===================== */
 const LS = {
-  apiUrl: 'afv_api_url', token: 'afv_token', view: 'afv_view'
+  apiUrl: 'afv_api_url', token: 'afv_token', view: 'afv_view',
+  customIp: 'afv_custom_ip', customType: 'afv_custom_type',
+  customDelivery: 'afv_custom_delivery', hiddenSellers: 'afv_hidden_sellers'
 };
 const IP_PRESETS = ['Dragon Ball','One Piece','MHA','Cartoon Network','DC','Marvel','Naruto','One Punch Man','Pokemon','Others'];
 const PRODUCT_TYPE_OPTIONS = ['Funko Pop','Banpresto','Gunpla','Bandai Kits','3D Prints','Others'];
+const DELIVERY_PRESETS = ['Ordered','In transit','Delivered'];
+
+/* ---- Admin-managed extra options for the IP / Product Type filters & dropdowns ----
+   Stored in this browser's localStorage (same place the API URL/token already live) —
+   this only extends the pick-lists shown in the UI, it never touches the Sheet. Any
+   value a figure actually uses (from the Sheet) always shows up regardless of this list. */
+function getCustomList(key){
+  try{ return JSON.parse(localStorage.getItem(key) || '[]'); }catch(e){ return []; }
+}
+function saveCustomList(key, arr){ localStorage.setItem(key, JSON.stringify(arr)); }
+function addCustomOption(key, value){
+  value = (value||'').trim();
+  if(!value) return false;
+  const list = getCustomList(key);
+  if(list.some(v=>v.toLowerCase()===value.toLowerCase())) return false;
+  list.push(value);
+  saveCustomList(key, list);
+  return true;
+}
+function removeCustomOption(key, value){
+  saveCustomList(key, getCustomList(key).filter(v=>v!==value));
+}
 function getApiUrl(){ return localStorage.getItem(LS.apiUrl) || ''; }
 function saveApiUrl(){
   const v = document.getElementById('cfg-api-url').value.trim();
@@ -278,7 +429,8 @@ function toggleSettingsMenu(){
   const menu = document.getElementById('settings-menu');
   const opening = menu.classList.contains('hidden');
   menu.classList.toggle('hidden');
-  if(opening) document.getElementById('settings-api-url').value = getApiUrl();
+  const urlInput = document.getElementById('settings-api-url');
+  if(opening && urlInput) urlInput.value = getApiUrl();
 }
 document.addEventListener('click', function(e){
   const menu = document.getElementById('settings-menu');
@@ -296,7 +448,295 @@ function saveApiUrlFromSettings(){
   loadData();
 }
 
+/* ===================== PREVIEW MODE — in-browser mock backend ====================
+   This copy is for reviewing the app's features before hosting. Login is skipped and
+   every "api()" call below is answered from an in-memory sample dataset instead of
+   your real Apps Script Web App — nothing here reads or writes your actual Sheet,
+   and nothing you do in this preview is saved anywhere once you close or reload it. */
+const PREVIEW_MODE = true;
+let MOCK_DB = { orders: [], figures: [], sellers: [] };
+let MOCK_SEQ = { orderId: 0, figureId: 0, sellerId: 0, groupBuyId: 0 };
+
+function mockNextId(prefix, seqKey, pad){
+  MOCK_SEQ[seqKey]++;
+  return prefix + '-' + String(MOCK_SEQ[seqKey]).padStart(pad, '0');
+}
+function mockAllocate(total, count, custom){
+  if(custom && custom.length === count) return custom.map(v=>Number(v)||0);
+  if(count <= 0) return [];
+  const base = Math.floor((total/count)*100)/100;
+  const arr = [];
+  for(let i=0;i<count;i++){ arr.push(i===count-1 ? Math.round((total - base*(count-1))*100)/100 : base); }
+  return arr;
+}
+function mockAddSeller(name){
+  if(!name) return '';
+  let s = MOCK_DB.sellers.find(x=>x['Seller Name']===name);
+  if(s) return s['Seller ID'];
+  const id = mockNextId('SEL','sellerId',3);
+  MOCK_DB.sellers.push({ 'Seller ID': id, 'Seller Name': name });
+  return id;
+}
+function mockFindOrder(orderId){ return MOCK_DB.orders.find(o=>o['Order ID']===orderId); }
+function mockFiguresOf(orderId){ return MOCK_DB.figures.filter(f=>f['Order ID']===orderId); }
+
+function seedMockData(){
+  MOCK_DB.sellers = [
+    { 'Seller ID':'SEL-001', 'Seller Name':'ESPADA' },
+    { 'Seller ID':'SEL-002', 'Seller Name':'Funko Pie' },
+    { 'Seller ID':'SEL-003', 'Seller Name':'Kawaii Katta' },
+    { 'Seller ID':'SEL-004', 'Seller Name':'Ninja Studio' }
+  ];
+  MOCK_DB.orders = [
+    { 'Order ID':'ORD-000001','Purchase Type':'Individual Figure','Seller ID':'SEL-001','Seller':'ESPADA','Order Date':'2024-03-12','Total Price':1800,'Paid Amount':1800,'Due Amount':0,'Payment Status':'Paid','Delivery Status':'Delivered','Delivery Date':'','Group Buy ID':'','Group Buy Name':'','Notes':'','Created At':'','Updated At':'' },
+    { 'Order ID':'ORD-000002','Purchase Type':'Individual Figure','Seller ID':'SEL-002','Seller':'Funko Pie','Order Date':'2024-11-05','Total Price':2499,'Paid Amount':1200,'Due Amount':1299,'Payment Status':'Payment Pending','Delivery Status':'Ordered','Delivery Date':'','Group Buy ID':'','Group Buy Name':'','Notes':'','Created At':'','Updated At':'' },
+    { 'Order ID':'ORD-000003','Purchase Type':'Individual Figure','Seller ID':'SEL-003','Seller':'Kawaii Katta','Order Date':'2025-05-20','Total Price':1899,'Paid Amount':1899,'Due Amount':0,'Payment Status':'Paid','Delivery Status':'In transit','Delivery Date':'','Group Buy ID':'','Group Buy Name':'','Notes':'','Created At':'','Updated At':'' },
+    { 'Order ID':'ORD-000004','Purchase Type':'Individual Figure','Seller ID':'SEL-004','Seller':'Ninja Studio','Order Date':'2026-08-01','Total Price':2300,'Paid Amount':1150,'Due Amount':1150,'Payment Status':'Payment Pending','Delivery Status':'Ordered','Delivery Date':'','Group Buy ID':'','Group Buy Name':'','Notes':'','Created At':'','Updated At':'' },
+    { 'Order ID':'ORD-000005','Purchase Type':'Group Buy / Bundle','Seller ID':'SEL-001','Seller':'ESPADA','Order Date':'2026-08-10','Total Price':6000,'Paid Amount':3000,'Due Amount':3000,'Payment Status':'Payment Pending','Delivery Status':'Ordered','Delivery Date':'','Group Buy ID':'GB-000001','Group Buy Name':'MHA Squad','Notes':'','Created At':'','Updated At':'' },
+    { 'Order ID':'ORD-000006','Purchase Type':'Group Buy / Bundle','Seller ID':'SEL-002','Seller':'Funko Pie','Order Date':'2026-08-20','Total Price':3600,'Paid Amount':3600,'Due Amount':0,'Payment Status':'Paid','Delivery Status':'Ordered','Delivery Date':'','Group Buy ID':'GB-000002','Group Buy Name':'One Piece Crew','Notes':'','Created At':'','Updated At':'' }
+  ];
+  MOCK_DB.figures = [
+    { 'Figure ID':'FIG-000001','Order ID':'ORD-000001','Figurine Name':'Goku','Allocated Price':1800,'Image URL':'','Drive File ID':'','Delivery Status':'Delivered','Seller':'ESPADA','IP':'Dragon Ball','Product Type':'Banpresto','Created At':'','Updated At':'' },
+    { 'Figure ID':'FIG-000002','Order ID':'ORD-000002','Figurine Name':'Saitama','Allocated Price':2499,'Image URL':'','Drive File ID':'','Delivery Status':'Ordered','Seller':'Funko Pie','IP':'One Punch Man','Product Type':'Funko Pop','Created At':'','Updated At':'' },
+    { 'Figure ID':'FIG-000003','Order ID':'ORD-000003','Figurine Name':'Batman','Allocated Price':1899,'Image URL':'','Drive File ID':'','Delivery Status':'In transit','Seller':'Kawaii Katta','IP':'DC','Product Type':'Funko Pop','Created At':'','Updated At':'' },
+    { 'Figure ID':'FIG-000004','Order ID':'ORD-000004','Figurine Name':'Mystery Figure (needs tagging)','Allocated Price':2300,'Image URL':'','Drive File ID':'','Delivery Status':'Ordered','Seller':'Ninja Studio','IP':'','Product Type':'','Created At':'','Updated At':'' },
+    { 'Figure ID':'FIG-000005','Order ID':'ORD-000005','Figurine Name':'Deku','Allocated Price':2200,'Image URL':'','Drive File ID':'','Delivery Status':'Delivered','Seller':'ESPADA','IP':'MHA','Product Type':'Banpresto','Created At':'','Updated At':'' },
+    { 'Figure ID':'FIG-000006','Order ID':'ORD-000005','Figurine Name':'Bakugo','Allocated Price':2000,'Image URL':'','Drive File ID':'','Delivery Status':'In transit','Seller':'ESPADA','IP':'MHA','Product Type':'Banpresto','Created At':'','Updated At':'' },
+    { 'Figure ID':'FIG-000007','Order ID':'ORD-000005','Figurine Name':'Uraraka','Allocated Price':1800,'Image URL':'','Drive File ID':'','Delivery Status':'Ordered','Seller':'ESPADA','IP':'MHA','Product Type':'Banpresto','Created At':'','Updated At':'' },
+    { 'Figure ID':'FIG-000008','Order ID':'ORD-000006','Figurine Name':'Luffy','Allocated Price':1800,'Image URL':'','Drive File ID':'','Delivery Status':'Ordered','Seller':'Funko Pie','IP':'One Piece','Product Type':'Funko Pop','Created At':'','Updated At':'' },
+    { 'Figure ID':'FIG-000009','Order ID':'ORD-000006','Figurine Name':'Zoro','Allocated Price':1800,'Image URL':'','Drive File ID':'','Delivery Status':'Ordered','Seller':'Funko Pie','IP':'One Piece','Product Type':'Funko Pop','Created At':'','Updated At':'' }
+  ];
+  MOCK_SEQ = { orderId: 6, figureId: 9, sellerId: 4, groupBuyId: 2 };
+}
+seedMockData();
+
+function mockApi(action, payload){
+  const now = new Date().toISOString();
+  switch(action){
+    case 'login':
+      return { ok:true, token:'preview-token' };
+    case 'ping':
+      return { ok:true };
+    case 'getAll':
+      return { ok:true, orders: MOCK_DB.orders, figures: MOCK_DB.figures, sellers: MOCK_DB.sellers };
+    case 'addSeller':
+      return { ok:true, sellerId: mockAddSeller(payload.name) };
+    case 'uploadImage':
+      // No real Drive in preview — just echo back the picked image's data URL so it still shows on screen.
+      return { ok:true, url: payload.base64Data, fileId: 'mock-'+Date.now() };
+    case 'createOrder': {
+      const sellerId = mockAddSeller(payload.seller);
+      const orderId = mockNextId('ORD','orderId',6);
+      const total = Number(payload.totalPrice||0);
+      const paid = Number(payload.paidAmount||0);
+      const due = Math.round((total-paid)*100)/100;
+      const paymentStatus = due<=0 ? 'Paid' : 'Payment Pending';
+      const isGroup = payload.purchaseType === 'Group Buy / Bundle';
+      const groupBuyId = isGroup ? mockNextId('GB','groupBuyId',6) : '';
+      MOCK_DB.orders.push({
+        'Order ID': orderId, 'Purchase Type': payload.purchaseType, 'Seller ID': sellerId, 'Seller': payload.seller,
+        'Order Date': payload.orderDate||'', 'Total Price': total, 'Paid Amount': paid, 'Due Amount': due,
+        'Payment Status': paymentStatus, 'Delivery Status': payload.deliveryStatus||'Ordered',
+        'Delivery Date': payload.deliveryDate||'', 'Group Buy ID': groupBuyId,
+        'Group Buy Name': isGroup ? (payload.groupBuyName||'') : '', 'Notes': payload.notes||'',
+        'Created At': now, 'Updated At': now
+      });
+      const figureIds = []; const figureNames = [];
+      if(isGroup){
+        const figs = payload.figures || [];
+        const custom = payload.splitEqually === false ? figs.map(f=>f.allocatedPrice) : null;
+        const allocations = mockAllocate(total, figs.length, custom);
+        figs.forEach((f,i)=>{
+          const fid = mockNextId('FIG','figureId',6);
+          MOCK_DB.figures.push({
+            'Figure ID': fid, 'Order ID': orderId, 'Figurine Name': f.name, 'Allocated Price': allocations[i],
+            'Image URL': f.imageUrl||'', 'Drive File ID': f.driveFileId||'', 'Delivery Status': f.deliveryStatus||payload.deliveryStatus||'Ordered',
+            'Seller': payload.seller, 'IP': f.ip||'', 'Product Type': f.productType||'', 'Created At': now, 'Updated At': now
+          });
+          figureIds.push(fid); figureNames.push(f.name);
+        });
+      } else {
+        const fid = mockNextId('FIG','figureId',6);
+        MOCK_DB.figures.push({
+          'Figure ID': fid, 'Order ID': orderId, 'Figurine Name': payload.figurineName, 'Allocated Price': total,
+          'Image URL': payload.imageUrl||'', 'Drive File ID': payload.driveFileId||'', 'Delivery Status': payload.deliveryStatus||'Ordered',
+          'Seller': payload.seller, 'IP': payload.ip||'', 'Product Type': payload.productType||'', 'Created At': now, 'Updated At': now
+        });
+        figureIds.push(fid); figureNames.push(payload.figurineName);
+      }
+      return { ok:true, orderId, figureIds, figureNames, groupBuyId };
+    }
+    case 'updateOrder': {
+      const o = mockFindOrder(payload.orderId);
+      if(!o) return { ok:false, error:'Order not found' };
+      const total = payload.totalPrice !== undefined ? Number(payload.totalPrice) : Number(o['Total Price']);
+      const paid = payload.paidAmount !== undefined ? Number(payload.paidAmount) : Number(o['Paid Amount']);
+      const due = Math.round((total-paid)*100)/100;
+      Object.assign(o, {
+        'Seller': payload.seller !== undefined ? payload.seller : o['Seller'],
+        'Order Date': payload.orderDate !== undefined ? payload.orderDate : o['Order Date'],
+        'Total Price': total, 'Paid Amount': paid, 'Due Amount': due,
+        'Payment Status': due<=0?'Paid':'Payment Pending',
+        'Delivery Status': payload.deliveryStatus !== undefined ? payload.deliveryStatus : o['Delivery Status'],
+        'Notes': payload.notes !== undefined ? payload.notes : o['Notes'],
+        'Group Buy Name': payload.groupBuyName !== undefined ? payload.groupBuyName : o['Group Buy Name'],
+        'Updated At': now
+      });
+      if(o['Purchase Type'] === 'Individual Figure'){
+        const f = mockFiguresOf(o['Order ID'])[0];
+        if(f){
+          if(payload.figurineName !== undefined) f['Figurine Name'] = payload.figurineName;
+          f['Allocated Price'] = total;
+          if(payload.deliveryStatus !== undefined) f['Delivery Status'] = payload.deliveryStatus;
+          if(payload.imageUrl){ f['Image URL'] = payload.imageUrl; f['Drive File ID'] = payload.driveFileId||''; }
+          if(payload.ip !== undefined) f['IP'] = payload.ip;
+          if(payload.productType !== undefined) f['Product Type'] = payload.productType;
+          f['Updated At'] = now;
+        }
+      }
+      return { ok:true };
+    }
+    case 'updateFigure': {
+      const f = MOCK_DB.figures.find(x=>x['Figure ID']===payload.figureId);
+      if(!f) return { ok:false, error:'Figure not found' };
+      if(payload.figurineName !== undefined) f['Figurine Name'] = payload.figurineName;
+      if(payload.allocatedPrice !== undefined) f['Allocated Price'] = Number(payload.allocatedPrice);
+      if(payload.deliveryStatus !== undefined) f['Delivery Status'] = payload.deliveryStatus;
+      if(payload.imageUrl){ f['Image URL'] = payload.imageUrl; f['Drive File ID'] = payload.driveFileId||''; }
+      if(payload.ip !== undefined) f['IP'] = payload.ip;
+      if(payload.productType !== undefined) f['Product Type'] = payload.productType;
+      f['Updated At'] = now;
+      return { ok:true };
+    }
+    case 'deleteOrder': {
+      MOCK_DB.orders = MOCK_DB.orders.filter(o=>o['Order ID']!==payload.orderId);
+      MOCK_DB.figures = MOCK_DB.figures.filter(f=>f['Order ID']!==payload.orderId);
+      return { ok:true };
+    }
+    case 'groupExistingOrders': {
+      const orderIds = payload.orderIds||[];
+      const selected = MOCK_DB.orders.filter(o=>orderIds.includes(o['Order ID']));
+      if(selected.length !== orderIds.length) return { ok:false, error:'Some selected figures were not found' };
+      const seller = payload.seller || selected[0]['Seller'];
+      const sellerId = mockAddSeller(seller);
+      const newOrderId = mockNextId('ORD','orderId',6);
+      const groupBuyId = mockNextId('GB','groupBuyId',6);
+      const total = Number(payload.totalPrice||0);
+      const paid = Number(payload.paidAmount||0);
+      const due = Math.round((total-paid)*100)/100;
+      MOCK_DB.orders.push({
+        'Order ID': newOrderId, 'Purchase Type': 'Group Buy / Bundle', 'Seller ID': sellerId, 'Seller': seller,
+        'Order Date': payload.orderDate||'', 'Total Price': total, 'Paid Amount': paid, 'Due Amount': due,
+        'Payment Status': due<=0?'Paid':'Payment Pending', 'Delivery Status': payload.deliveryStatus||'Ordered',
+        'Delivery Date': '', 'Group Buy ID': groupBuyId, 'Group Buy Name': payload.groupBuyName||'',
+        'Notes': payload.notes||'', 'Created At': now, 'Updated At': now
+      });
+      let figs = [];
+      orderIds.forEach(oid=>{ figs = figs.concat(mockFiguresOf(oid)); });
+      const custom = payload.splitEqually === false ? payload.customAllocations : null;
+      const allocations = mockAllocate(total, figs.length, custom);
+      const figureNames = [];
+      figs.forEach((f,i)=>{
+        f['Order ID'] = newOrderId; f['Allocated Price'] = allocations[i]; f['Seller'] = seller; f['Updated At'] = now;
+        figureNames.push(f['Figurine Name']);
+      });
+      MOCK_DB.orders = MOCK_DB.orders.filter(o=>!orderIds.includes(o['Order ID']));
+      return { ok:true, orderId:newOrderId, groupBuyId, figureCount:figs.length, figureNames };
+    }
+    case 'removeFromBundle': {
+      const f = MOCK_DB.figures.find(x=>x['Figure ID']===payload.figureId);
+      if(!f) return { ok:false, error:'Figure not found' };
+      const bundleOrder = mockFindOrder(f['Order ID']);
+      const bundleFigs = mockFiguresOf(bundleOrder['Order ID']);
+      const bundleTotal = Number(bundleOrder['Total Price']||0);
+      const bundlePaid = Number(bundleOrder['Paid Amount']||0);
+      const share = bundleTotal>0 ? Number(f['Allocated Price'])/bundleTotal : 0;
+      const figPaid = Math.round(bundlePaid*share*100)/100;
+      const figTotal = Number(f['Allocated Price']);
+      const figDue = Math.round((figTotal-figPaid)*100)/100;
+      const newOrderId = mockNextId('ORD','orderId',6);
+      MOCK_DB.orders.push({
+        'Order ID': newOrderId, 'Purchase Type': 'Individual Figure', 'Seller ID': mockAddSeller(f['Seller']), 'Seller': f['Seller'],
+        'Order Date': bundleOrder['Order Date'], 'Total Price': figTotal, 'Paid Amount': figPaid, 'Due Amount': figDue,
+        'Payment Status': figDue<=0?'Paid':'Payment Pending', 'Delivery Status': f['Delivery Status']||'Ordered',
+        'Delivery Date': '', 'Group Buy ID': '', 'Group Buy Name': '', 'Notes': 'Removed from bundle '+bundleOrder['Group Buy ID'],
+        'Created At': now, 'Updated At': now
+      });
+      f['Order ID'] = newOrderId; f['Updated At'] = now;
+      const remaining = bundleFigs.filter(x=>x['Figure ID']!==f['Figure ID']);
+      let bundleDissolved = false;
+      if(remaining.length <= 1){
+        bundleDissolved = true;
+        if(remaining.length === 1){
+          const last = remaining[0];
+          const lastOrderId = mockNextId('ORD','orderId',6);
+          const lastPaid = Math.round((bundlePaid-figPaid)*100)/100;
+          const lastTotal = Number(last['Allocated Price']);
+          const lastDue = Math.round((lastTotal-lastPaid)*100)/100;
+          MOCK_DB.orders.push({
+            'Order ID': lastOrderId, 'Purchase Type':'Individual Figure', 'Seller ID': mockAddSeller(last['Seller']), 'Seller': last['Seller'],
+            'Order Date': bundleOrder['Order Date'], 'Total Price': lastTotal, 'Paid Amount': lastPaid, 'Due Amount': lastDue,
+            'Payment Status': lastDue<=0?'Paid':'Payment Pending', 'Delivery Status': last['Delivery Status']||'Ordered',
+            'Delivery Date':'', 'Group Buy ID':'', 'Group Buy Name':'', 'Notes':'Bundle dissolved', 'Created At': now, 'Updated At': now
+          });
+          last['Order ID'] = lastOrderId; last['Updated At'] = now;
+        }
+        MOCK_DB.orders = MOCK_DB.orders.filter(o=>o['Order ID'] !== bundleOrder['Order ID']);
+      } else {
+        bundleOrder['Total Price'] = Math.round((bundleTotal-figTotal)*100)/100;
+        bundleOrder['Paid Amount'] = Math.round((bundlePaid-figPaid)*100)/100;
+        bundleOrder['Due Amount'] = Math.round((bundleOrder['Total Price']-bundleOrder['Paid Amount'])*100)/100;
+        bundleOrder['Payment Status'] = bundleOrder['Due Amount']<=0?'Paid':'Payment Pending';
+        bundleOrder['Updated At'] = now;
+      }
+      return { ok:true, newOrderId, figureId: f['Figure ID'], bundleDissolved };
+    }
+    case 'ungroupBundle': {
+      const bundleOrder = mockFindOrder(payload.orderId);
+      if(!bundleOrder) return { ok:false, error:'Bundle not found' };
+      const figs = mockFiguresOf(bundleOrder['Order ID']);
+      const bundleTotal = Number(bundleOrder['Total Price']||0);
+      const bundlePaid = Number(bundleOrder['Paid Amount']||0);
+      const newOrderIds = [];
+      let allocatedPaidSum = 0;
+      figs.forEach((f,i)=>{
+        const share = bundleTotal>0 ? Number(f['Allocated Price'])/bundleTotal : 0;
+        let figPaid = Math.round(bundlePaid*share*100)/100;
+        if(i === figs.length-1) figPaid = Math.round((bundlePaid-allocatedPaidSum)*100)/100;
+        allocatedPaidSum += figPaid;
+        const figTotal = Number(f['Allocated Price']);
+        const figDue = Math.round((figTotal-figPaid)*100)/100;
+        const newOrderId = mockNextId('ORD','orderId',6);
+        MOCK_DB.orders.push({
+          'Order ID': newOrderId, 'Purchase Type':'Individual Figure', 'Seller ID': mockAddSeller(f['Seller']), 'Seller': f['Seller'],
+          'Order Date': bundleOrder['Order Date'], 'Total Price': figTotal, 'Paid Amount': figPaid, 'Due Amount': figDue,
+          'Payment Status': figDue<=0?'Paid':'Payment Pending', 'Delivery Status': f['Delivery Status']||'Ordered',
+          'Delivery Date':'', 'Group Buy ID':'', 'Group Buy Name':'', 'Notes':'Ungrouped from '+bundleOrder['Group Buy ID'],
+          'Created At': now, 'Updated At': now
+        });
+        f['Order ID'] = newOrderId; f['Updated At'] = now;
+        newOrderIds.push(newOrderId);
+      });
+      MOCK_DB.orders = MOCK_DB.orders.filter(o=>o['Order ID'] !== bundleOrder['Order ID']);
+      return { ok:true, newOrderIds, figureCount: figs.length };
+    }
+    case 'bulkSetCategory': {
+      const ids = payload.figureIds||[];
+      const field = payload.field;
+      const value = payload.value;
+      let count = 0;
+      MOCK_DB.figures.forEach(f=>{
+        if(ids.includes(f['Figure ID'])){ f[field] = value; f['Updated At'] = now; count++; }
+      });
+      return { ok:true, updatedCount: count };
+    }
+    default:
+      return { ok:false, error:'Unknown action in preview mode: '+action };
+  }
+}
+
 async function api(action, payload, method){
+  if(PREVIEW_MODE) return mockApi(action, payload);
   const url = getApiUrl();
   if(!url){ toast('Set the Apps Script Web App URL first'); throw new Error('no api url'); }
   const token = localStorage.getItem(LS.token) || '';
@@ -317,6 +757,14 @@ async function doLogin(){
   const errEl = document.getElementById('login-err');
   errEl.textContent = '';
   if(!getApiUrl()){ errEl.textContent = 'Set the Apps Script URL below first.'; return; }
+  if(PREVIEW_MODE){
+    // Preview copy — no real backend to authenticate against, so any password is accepted.
+    // Routes through the same mock login action a real login would use, rather than making a real network call.
+    const data = mockApi('login', { password: pw });
+    if(data.ok){ localStorage.setItem(LS.token, data.token); showApp(); }
+    else{ errEl.textContent = data.error || 'Invalid password'; }
+    return;
+  }
   try{
     const res = await fetch(getApiUrl(), {
       method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
@@ -340,7 +788,12 @@ async function showApp(){
 }
 
 /* ===================== Data ===================== */
-let STATE = { orders: [], figures: [], sellers: [], view: localStorage.getItem(LS.view) || 'gallery', selectMode: false, selected: new Set(), categorizeMode: false, catSelected: new Set(), page: 'collection' };
+let STATE = {
+  orders: [], figures: [], sellers: [], view: localStorage.getItem(LS.view) || 'gallery',
+  selectMode: false, selected: new Set(), categorizeMode: false, catSelected: new Set(), page: 'collection',
+  filters: { seller: new Set(), delivery: new Set(), payment: new Set(), type: new Set(), ip: new Set(), productType: new Set() },
+  dbFilters: { seller: new Set(), delivery: new Set(), payment: new Set(), type: new Set(), ip: new Set(), productType: new Set() }
+};
 
 function setPage(p){
   STATE.page = p;
@@ -358,37 +811,174 @@ async function loadData(){
   STATE.orders = data.orders || [];
   STATE.figures = data.figures || [];
   STATE.sellers = data.sellers || [];
-  populateSellerFilter();
-  populateIpFilters();
+  refreshAllMselButtons('col');
+  refreshAllMselButtons('db');
   render();
+  if(STATE.page === 'dashboard') renderAnalyticsDashboard();
 }
 
-function populateSellerFilter(){
-  ['f-seller','db-seller'].forEach(id=>{
-    const sel = document.getElementById(id);
-    if(!sel) return;
-    const current = sel.value;
-    sel.innerHTML = '<option value="">All Sellers</option>' +
-      STATE.sellers.map(s=>`<option value="${esc(s['Seller Name'])}">${esc(s['Seller Name'])}</option>`).join('');
-    sel.value = current;
-  });
-}
-
+/* option lists = admin-added custom values ∪ presets ∪ whatever's actually used in the data, always deduped, 'Others' pinned last */
 function ipOptionsList(){
   const used = Array.from(new Set(STATE.figures.map(f=>f['IP']).filter(Boolean)));
+  const custom = getCustomList(LS.customIp);
   const base = IP_PRESETS.filter(x=>x!=='Others');
-  const extra = used.filter(x=>base.indexOf(x)===-1 && x!=='Others');
+  const seen = new Set(base.map(x=>x.toLowerCase()));
+  const extra = [];
+  [...custom, ...used].forEach(v=>{
+    if(v && v!=='Others' && !seen.has(v.toLowerCase())){ seen.add(v.toLowerCase()); extra.push(v); }
+  });
   return [...base, ...extra, 'Others'];
 }
-function populateIpFilters(){
-  const opts = ipOptionsList();
-  ['f-ip','db-ip'].forEach(id=>{
-    const sel = document.getElementById(id);
-    if(!sel) return;
-    const current = sel.value;
-    sel.innerHTML = '<option value="">All IPs</option>' + opts.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
-    sel.value = current;
+function productTypeOptionsList(){
+  const used = Array.from(new Set(STATE.figures.map(f=>f['Product Type']).filter(Boolean)));
+  const custom = getCustomList(LS.customType);
+  const base = PRODUCT_TYPE_OPTIONS.filter(x=>x!=='Others');
+  const seen = new Set(base.map(x=>x.toLowerCase()));
+  const extra = [];
+  [...custom, ...used].forEach(v=>{
+    if(v && v!=='Others' && !seen.has(v.toLowerCase())){ seen.add(v.toLowerCase()); extra.push(v); }
   });
+  return [...base, ...extra, 'Others'];
+}
+/* Delivery Status: same preset+custom+used-in-data merge pattern as IP/Product Type. */
+function deliveryStatusOptionsList(){
+  const usedFigs = STATE.figures.map(f=>f['Delivery Status']).filter(Boolean);
+  const usedOrders = STATE.orders.map(o=>o['Delivery Status']).filter(Boolean);
+  const custom = getCustomList(LS.customDelivery);
+  const seen = new Set(DELIVERY_PRESETS.map(x=>x.toLowerCase()));
+  const extra = [];
+  [...custom, ...usedFigs, ...usedOrders].forEach(v=>{
+    if(v && !seen.has(v.toLowerCase())){ seen.add(v.toLowerCase()); extra.push(v); }
+  });
+  return [...DELIVERY_PRESETS, ...extra];
+}
+/* Sellers actually come from the Sheet, not a preset list — "removing" one here only hides
+   it from dropdowns/filters in this browser, it never touches the Sellers tab. */
+function sellerFilterOptions(){
+  const hidden = new Set(getCustomList(LS.hiddenSellers).map(v=>v.toLowerCase()));
+  return STATE.sellers.map(s=>s['Seller Name']).filter(n=>n && !hidden.has(n.toLowerCase()));
+}
+
+/* ===================== Multi-select filter dropdowns ===================== */
+const FILTER_DEFS = {
+  seller: { label: 'Seller', dynamic: 'sellers' },
+  delivery: { label: 'Delivery', dynamic: 'delivery' },
+  payment: { label: 'Payment', options: ['Paid','Payment Pending'] },
+  type: { label: 'Purchase Type', options: ['Individual Figure','Group Buy / Bundle'] },
+  ip: { label: 'IP / Series', dynamic: 'ip' },
+  productType: { label: 'Product Type', dynamic: 'productType' }
+};
+const FILTER_KEYS_COL = ['seller','delivery','payment','type','ip','productType'];
+const FILTER_KEYS_DB = ['seller','ip','productType','delivery','payment','type'];
+
+function mselOptions(key){
+  const def = FILTER_DEFS[key];
+  if(def.options) return def.options;
+  if(def.dynamic === 'sellers') return sellerFilterOptions();
+  if(def.dynamic === 'ip') return ipOptionsList();
+  if(def.dynamic === 'productType') return productTypeOptionsList();
+  if(def.dynamic === 'delivery') return deliveryStatusOptionsList();
+  return [];
+}
+function mselHtml(scope, key){
+  const def = FILTER_DEFS[key];
+  return `<div class="msel" id="msel-${scope}-${key}">
+    <button type="button" class="msel-btn" onclick="toggleMsel('${scope}','${key}')">${esc(def.label)}<span class="msel-count hidden" id="msel-count-${scope}-${key}"></span><span class="care">▾</span></button>
+    <div class="msel-panel hidden" id="msel-panel-${scope}-${key}"></div>
+  </div>`;
+}
+function initFilterBars(){
+  document.getElementById('msel-holder-col').innerHTML = FILTER_KEYS_COL.map(k=>mselHtml('col',k)).join('');
+  document.getElementById('msel-holder-db').innerHTML = FILTER_KEYS_DB.map(k=>mselHtml('db',k)).join('');
+}
+function escJs(s){ return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+function filterBag(scope){ return scope === 'col' ? STATE.filters : STATE.dbFilters; }
+function positionMselPanel(scope, key){
+  // Fixed-position, anchored below the WHOLE toolbar (not just this button) so an
+  // open panel can never overlap a sibling filter button that wrapped onto the next
+  // line — that overlap was swallowing clicks meant for the button underneath it.
+  const wrap = document.getElementById('msel-'+scope+'-'+key);
+  const panel = document.getElementById('msel-panel-'+scope+'-'+key);
+  const btn = wrap.querySelector('.msel-btn');
+  const btnRect = btn.getBoundingClientRect();
+  const toolbar = wrap.closest('.toolbar');
+  const toolbarRect = (toolbar || wrap).getBoundingClientRect();
+  const panelWidth = 230, panelMaxHeight = 290;
+  let left = btnRect.left;
+  if(left + panelWidth > window.innerWidth - 8) left = Math.max(8, window.innerWidth - panelWidth - 8);
+  let top = toolbarRect.bottom + 6;
+  // Not enough room below (e.g. the toolbar sits low on a tall page) — open upward
+  // from the button itself instead of letting the panel run off the bottom edge.
+  if(top + panelMaxHeight > window.innerHeight - 8) top = Math.max(8, btnRect.top - panelMaxHeight - 6);
+  panel.style.left = left + 'px';
+  panel.style.top = top + 'px';
+}
+function toggleMsel(scope, key){
+  document.querySelectorAll('.msel-panel').forEach(p=>{ if(p.id !== 'msel-panel-'+scope+'-'+key) p.classList.add('hidden'); });
+  const panel = document.getElementById('msel-panel-'+scope+'-'+key);
+  const opening = panel.classList.contains('hidden');
+  if(opening){ renderMselPanel(scope, key); positionMselPanel(scope, key); }
+  panel.classList.toggle('hidden');
+}
+function renderMselPanel(scope, key){
+  const panel = document.getElementById('msel-panel-'+scope+'-'+key);
+  const opts = mselOptions(key);
+  const set = filterBag(scope)[key];
+  if(!opts.length){ panel.innerHTML = '<div class="msel-empty">No values yet</div>'; return; }
+  panel.innerHTML = `<div class="msel-actions"><button type="button" onclick="mselAll('${scope}','${key}')">Select All</button><button type="button" onclick="mselNone('${scope}','${key}')">Clear</button></div>` +
+    opts.map(v=>`<label class="msel-option"><input type="checkbox" ${set.has(v)?'checked':''} onchange="mselToggle('${scope}','${key}','${escJs(v)}')">${esc(v)}</label>`).join('');
+}
+function mselToggle(scope, key, value){
+  const set = filterBag(scope)[key];
+  if(set.has(value)) set.delete(value); else set.add(value);
+  updateMselButton(scope, key);
+  scope === 'col' ? render() : renderAnalyticsDashboard();
+}
+function mselAll(scope, key){
+  filterBag(scope)[key] = new Set(mselOptions(key));
+  renderMselPanel(scope, key); updateMselButton(scope, key);
+  scope === 'col' ? render() : renderAnalyticsDashboard();
+}
+function mselNone(scope, key){
+  filterBag(scope)[key] = new Set();
+  renderMselPanel(scope, key); updateMselButton(scope, key);
+  scope === 'col' ? render() : renderAnalyticsDashboard();
+}
+function updateMselButton(scope, key){
+  const n = filterBag(scope)[key].size;
+  const wrap = document.getElementById('msel-'+scope+'-'+key);
+  if(!wrap) return;
+  const btn = wrap.querySelector('.msel-btn');
+  const countEl = document.getElementById('msel-count-'+scope+'-'+key);
+  if(n > 0){ btn.classList.add('active'); countEl.textContent = n; countEl.classList.remove('hidden'); }
+  else { btn.classList.remove('active'); countEl.classList.add('hidden'); }
+}
+function refreshAllMselButtons(scope){
+  (scope === 'col' ? FILTER_KEYS_COL : FILTER_KEYS_DB).forEach(k=>updateMselButton(scope, k));
+}
+document.addEventListener('click', function(e){
+  document.querySelectorAll('.msel').forEach(m=>{
+    if(!m.contains(e.target)){ const p = m.querySelector('.msel-panel'); if(p) p.classList.add('hidden'); }
+  });
+});
+function isAnyColFilterActive(){
+  const q = document.getElementById('f-search') ? document.getElementById('f-search').value.trim() : '';
+  if(q) return true;
+  return Object.values(STATE.filters).some(s=>s.size > 0);
+}
+function resetFilters(){
+  document.getElementById('f-search').value = '';
+  document.getElementById('f-sort').value = 'date-desc';
+  FILTER_KEYS_COL.forEach(k=>{ STATE.filters[k] = new Set(); });
+  document.querySelectorAll('.msel-panel').forEach(p=>p.classList.add('hidden'));
+  refreshAllMselButtons('col');
+  render();
+}
+function resetDbFilters(){
+  FILTER_KEYS_DB.forEach(k=>{ STATE.dbFilters[k] = new Set(); });
+  document.querySelectorAll('.msel-panel').forEach(p=>p.classList.add('hidden'));
+  refreshAllMselButtons('db');
+  renderAnalyticsDashboard();
 }
 
 /* ===================== Derived rows ===================== */
@@ -433,18 +1023,15 @@ function buildCards(){
 function filteredSorted(){
   let rows = buildCards();
   const q = document.getElementById('f-search').value.trim().toLowerCase();
-  const seller = document.getElementById('f-seller').value;
-  const delivery = document.getElementById('f-delivery').value;
-  const payment = document.getElementById('f-payment').value;
-  const type = document.getElementById('f-type').value;
-  const ip = document.getElementById('f-ip') ? document.getElementById('f-ip').value : '';
   const sort = document.getElementById('f-sort').value;
-  if(q) rows = rows.filter(r => (r.name||'').toLowerCase().includes(q) || (r.seller||'').toLowerCase().includes(q) || (r.groupBuyName||'').toLowerCase().includes(q));
-  if(seller) rows = rows.filter(r=>r.seller===seller);
-  if(delivery) rows = rows.filter(r=>r.delivery===delivery);
-  if(payment) rows = rows.filter(r=>r.paymentStatus===payment);
-  if(type) rows = rows.filter(r=>r.purchaseType===type);
-  if(ip) rows = rows.filter(r=>r.ip===ip);
+  const F = STATE.filters;
+  if(q) rows = rows.filter(r => (r.name||'').toLowerCase().includes(q) || (r.seller||'').toLowerCase().includes(q) || (r.groupBuyName||'').toLowerCase().includes(q) || (r.ip||'').toLowerCase().includes(q) || (r.productType||'').toLowerCase().includes(q));
+  if(F.seller.size) rows = rows.filter(r=>F.seller.has(r.seller));
+  if(F.delivery.size) rows = rows.filter(r=>F.delivery.has(r.delivery));
+  if(F.payment.size) rows = rows.filter(r=>F.payment.has(r.paymentStatus));
+  if(F.type.size) rows = rows.filter(r=>F.type.has(r.purchaseType));
+  if(F.ip.size) rows = rows.filter(r=>F.ip.has(r.ip));
+  if(F.productType.size) rows = rows.filter(r=>F.productType.has(r.productType));
   rows.sort((a,b)=>{
     if(sort==='price-desc') return b.price-a.price;
     if(sort==='price-asc') return a.price-b.price;
@@ -455,67 +1042,381 @@ function filteredSorted(){
   return rows;
 }
 
-/* ===================== Dashboard ===================== */
-function renderDashboard(){
-  const orders = STATE.orders;
-  const figures = STATE.figures;
-  const totalFigures = figures.length;
-  const totalOrders = orders.length;
-  const groupBuys = orders.filter(o=>o['Purchase Type']==='Group Buy / Bundle').length;
-  const delivered = figures.filter(f=>(f['Delivery Status']||'')==='Delivered').length;
-  const awaiting = totalFigures - delivered;
-  const fullyPaid = orders.filter(o=>o['Payment Status']==='Paid').length;
-  const outstanding = orders.reduce((s,o)=>s+Number(o['Due Amount']||0),0);
-  const collectionValue = orders.reduce((s,o)=>s+Number(o['Total Price']||0),0);
-  const stats = [
-    ['Total Figures', totalFigures, ''], ['Total Orders', totalOrders, ''],
-    ['Group Buys', groupBuys, ''], ['Awaiting Delivery', awaiting, 'warn'],
-    ['Delivered', delivered, 'ok'], ['Fully Paid Orders', fullyPaid, 'ok'],
-    ['Outstanding', '₹'+fmt(outstanding), 'accent'], ['Collection Value', '₹'+fmt(collectionValue), 'accent']
+/* ===================== Dashboard (top summary on Collection page — reflects active filters) ===================== */
+/* Compact Indian-style currency for the growth-story labels (₹85K, ₹2.4L, ₹3.8Cr) —
+   the six KPI cards below use full precise amounts instead; this is only for the chart. */
+function fmtCompactINR(n){
+  n = Math.round(n);
+  const abs = Math.abs(n);
+  if(abs >= 1e7) return (n/1e7).toFixed(2).replace(/\.?0+$/,'')+'Cr';
+  if(abs >= 1e5) return (n/1e5).toFixed(1).replace(/\.0$/,'')+'L';
+  if(abs >= 1e3) return (n/1e3).toFixed(1).replace(/\.0$/,'')+'K';
+  return String(Math.round(n));
+}
+const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function monthLabel(p){ return MONTH_ABBR[p.month-1] + " '" + String(p.year).slice(2); }
+
+/* One point per calendar month from the first dated order to the last, gaps filled with
+   zero spend so the timeline reads continuously rather than jumping between active months. */
+function monthlySpendSeries(rows){
+  const byMonth = {};
+  rows.forEach(r=>{
+    if(!r.orderDate) return;
+    const d = new Date(r.orderDate);
+    if(isNaN(d)) return;
+    const key = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    byMonth[key] = (byMonth[key]||0) + r.totalPrice;
+  });
+  const keys = Object.keys(byMonth).sort();
+  if(!keys.length) return [];
+  const [y0,m0] = keys[0].split('-').map(Number);
+  const [y1,m1] = keys[keys.length-1].split('-').map(Number);
+  const series = [];
+  let y=y0, m=m0, cum=0;
+  while(y<y1 || (y===y1 && m<=m1)){
+    const key = y+'-'+String(m).padStart(2,'0');
+    const spend = byMonth[key] || 0;
+    cum += spend;
+    series.push({ key, year:y, month:m, spend, cumulative:cum });
+    m++; if(m>12){ m=1; y++; }
+  }
+  return series;
+}
+/* Cumulative collection value as of the last recorded month of each year — the
+   "2024 → ₹85K → 2025 → ₹2.4L" growth-milestone strip above the chart. */
+function yearMilestones(series){
+  const byYear = {};
+  series.forEach(p=>{ byYear[p.year] = p.cumulative; });
+  return Object.keys(byYear).sort().map(y=>({ year:y, value:byYear[y] }));
+}
+/* Two synced panels sharing one x-axis (months) rather than one dual-scale chart: a
+   cumulative-value area/line (its own scale) above a monthly-spend bar strip (its own,
+   much smaller scale). Overlaying both on a single y-axis would either flatten the bars
+   to invisibility or crush the line's shape — two honestly-scaled panels read the growth
+   story better than one chart lying about the numbers. */
+function renderSpendChart(rows){
+  const wrap = document.getElementById('spend-chart-wrap');
+  const milestoneEl = document.getElementById('spend-milestones');
+  const xLabelsEl = document.getElementById('spend-x-labels');
+  if(!wrap) return;
+  const series = monthlySpendSeries(rows);
+  if(series.length < 2){
+    wrap.innerHTML = '<div class="spend-empty">Not enough dated orders yet to chart spend over time.</div>';
+    milestoneEl.innerHTML = '';
+    xLabelsEl.innerHTML = '';
+    return;
+  }
+  const milestones = yearMilestones(series);
+  milestoneEl.innerHTML = milestones.map((m,i)=>(i>0?'<span>→</span>':'')+`<span>${m.year} → <b>₹${fmtCompactINR(m.value)}</b></span>`).join('');
+
+  const W = 1000, H = 180, padTop = 18, padBottom = 6;
+  const n = series.length;
+  const stepX = n > 1 ? W/(n-1) : W;
+  const maxCum = Math.max(...series.map(p=>p.cumulative), 1);
+  const pts = series.map((p,i)=>{
+    const x = i*stepX;
+    const y = padTop + (H-padTop-padBottom) * (1 - p.cumulative/maxCum);
+    return [x, y];
+  });
+  const linePath = pts.map((p,i)=> (i===0?'M':'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+  const areaPath = linePath + ` L${pts[n-1][0].toFixed(1)},${H} L0,${H} Z`;
+
+  const BH = 52;
+  const maxSpend = Math.max(...series.map(p=>p.spend), 1);
+  const barW = Math.max(2, stepX * 0.55);
+  const bars = series.map((p,i)=>{
+    const h = maxSpend > 0 ? (p.spend/maxSpend) * BH : 0;
+    const x = i*stepX - barW/2;
+    return `<rect x="${x.toFixed(1)}" y="${(BH-h).toFixed(1)}" width="${barW.toFixed(1)}" height="${Math.max(h,1).toFixed(1)}" rx="1.5" fill="var(--hd-gold)" fill-opacity=".55"><title>${monthLabel(p)}: ₹${fmt(Math.round(p.spend))}</title></rect>`;
+  }).join('');
+
+  wrap.innerHTML = `
+    <svg class="spend-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="spendFade" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="var(--hd-gold)" stop-opacity=".32"/>
+          <stop offset="100%" stop-color="var(--hd-gold)" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <path d="${areaPath}" fill="url(#spendFade)" stroke="none"/>
+      <path d="${linePath}" fill="none" stroke="var(--hd-gold)" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>
+      ${pts.map((p,i)=> i===n-1 || series[i+1] && series[i+1].year!==series[i].year ? `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="4" fill="var(--hd-gold)"><title>${monthLabel(series[i])}: cumulative ₹${fmt(Math.round(series[i].cumulative))}</title></circle>` : '').join('')}
+    </svg>
+    <svg class="spend-bars-svg" viewBox="0 0 ${W} ${BH}" preserveAspectRatio="none">${bars}</svg>`;
+
+  const labelEvery = Math.max(1, Math.ceil(n/8));
+  xLabelsEl.innerHTML = series.map((p,i)=> (i % labelEvery === 0 || i === n-1) ? `<span>${monthLabel(p)}</span>` : '').join('');
+}
+
+function renderDashboard(rows){
+  const totalFigures = rows.length;
+  const collectionValue = rows.reduce((s,r)=>s+r.totalPrice,0);
+  const outstanding = rows.reduce((s,r)=>s+r.dueAmount,0);
+  const totalPaid = collectionValue - outstanding;
+  const delivered = rows.filter(r=>r.delivery==='Delivered').length;
+  const activeOrders = new Set(rows.filter(r=>r.delivery!=='Delivered').map(r=>r.orderId)).size;
+  const filtered = isAnyColFilterActive();
+
+  const kpis = [
+    ['Total Collection Value', '₹'+fmt(Math.round(collectionValue)), true],
+    ['Total Figures', totalFigures, false],
+    ['Total Paid', '₹'+fmt(Math.round(totalPaid)), false],
+    ['Outstanding', '₹'+fmt(Math.round(outstanding)), false],
+    ['Figures Received', delivered, false],
+    ['Active Orders', activeOrders, false]
   ];
-  document.getElementById('dashboard').innerHTML = stats.map(s=>`
-    <div class="stat-card ${s[2]}"><div class="label">${s[0]}</div><div class="value">${s[1]}</div></div>
-  `).join('');
+  const el = document.getElementById('dashboard');
+  el.innerHTML = `
+    ${filtered ? '<div class="hd-filtered">Showing filtered results</div>' : ''}
+    <div class="kpi-grid">
+      ${kpis.map(k=>`<div class="kpi-card${k[2]?' hero':''}"><div class="kpi-label">${k[0]}</div><div class="kpi-value">${k[1]}</div></div>`).join('')}
+    </div>
+    <div class="spend-panel">
+      <div class="spend-head">
+        <div class="spend-title">₹ Total Spend Over Time</div>
+        <div class="spend-milestones" id="spend-milestones"></div>
+      </div>
+      <div class="spend-chart-wrap" id="spend-chart-wrap"></div>
+      <div class="spend-x-labels" id="spend-x-labels"></div>
+    </div>
+  `;
+  renderSpendChart(rows);
 }
 
 /* ===================== Analytics Dashboard (second page) ===================== */
-function renderAnalyticsDashboard(){
-  const sellerSel = document.getElementById('db-seller');
-  const ipSel = document.getElementById('db-ip');
-  if(!sellerSel || !ipSel) return;
-  const seller = sellerSel.value;
-  const ip = ipSel.value;
+function dbFilteredRows(){
   let rows = buildCards();
-  if(seller) rows = rows.filter(r=>r.seller===seller);
-  if(ip) rows = rows.filter(r=>r.ip===ip);
+  const F = STATE.dbFilters;
+  if(F.seller.size) rows = rows.filter(r=>F.seller.has(r.seller));
+  if(F.ip.size) rows = rows.filter(r=>F.ip.has(r.ip));
+  if(F.productType.size) rows = rows.filter(r=>F.productType.has(r.productType));
+  if(F.delivery.size) rows = rows.filter(r=>F.delivery.has(r.delivery));
+  if(F.payment.size) rows = rows.filter(r=>F.payment.has(r.paymentStatus));
+  if(F.type.size) rows = rows.filter(r=>F.type.has(r.purchaseType));
+  return rows;
+}
+function groupBy(rows, field){
+  const m = {};
+  rows.forEach(r=>{
+    const k = r[field] || 'Uncategorized';
+    if(!m[k]) m[k] = { count: 0, value: 0, due: 0 };
+    m[k].count++; m[k].value += r.totalPrice; m[k].due += r.dueAmount;
+  });
+  return Object.entries(m).map(([label,v])=>({ label, ...v })).sort((a,b)=>b.value-a.value);
+}
+function insightTable(rows, groupField, title, sub){
+  if(!rows.length) return `<div class="insight-section"><h3>${esc(title)}</h3><div class="insight-table-empty">No figures match these filters.</div></div>`;
 
-  const bought = rows.length;
-  const fullyPaid = rows.filter(r=>r.paymentStatus==='Paid');
-  const partiallyPaid = rows.filter(r=>r.paymentStatus!=='Paid');
-  const delivered = rows.filter(r=>r.delivery==='Delivered');
-  const toBeDelivered = rows.filter(r=>r.delivery!=='Delivered');
+  const statusOrder = deliveryStatusOptionsList();
+  const statusesUsed = statusOrder.filter(s => rows.some(r => r.delivery === s));
+  rows.forEach(r=>{ if(r.delivery && !statusesUsed.includes(r.delivery)) statusesUsed.push(r.delivery); });
 
-  const fullyPaidValue = fullyPaid.reduce((s,r)=>s+r.totalPrice,0);
-  const partiallyPaidDue = partiallyPaid.reduce((s,r)=>s+r.dueAmount,0);
-  const deliveredValue = delivered.reduce((s,r)=>s+r.totalPrice,0);
-  const toBeDeliveredValue = toBeDelivered.reduce((s,r)=>s+r.totalPrice,0);
-  const toBeDeliveredDue = toBeDelivered.reduce((s,r)=>s+r.dueAmount,0);
+  const groups = {};
+  rows.forEach(r=>{
+    const key = r[groupField] || 'Uncategorized';
+    if(!groups[key]) groups[key] = { count:0, orderValue:0, paidCount:0, paidValue:0, dueValue:0, byStatus:{} };
+    const g = groups[key];
+    g.count++;
+    g.orderValue += r.totalPrice;
+    if(r.paymentStatus === 'Paid') g.paidCount++;
+    g.paidValue += (r.totalPrice - r.dueAmount);
+    g.dueValue += r.dueAmount;
+    const st = r.delivery || 'Unspecified';
+    if(!g.byStatus[st]) g.byStatus[st] = { count:0, value:0 };
+    g.byStatus[st].count++;
+    g.byStatus[st].value += r.totalPrice;
+  });
 
-  const el = document.getElementById('analytics-dashboard');
-  el.innerHTML = `
-    <div class="dash-grid">
-      <div class="stat-card"><div class="label">Figurines Bought</div><div class="value">${bought}</div></div>
-      <div class="stat-card ok"><div class="label">Completely Paid</div><div class="value">${fullyPaid.length}</div></div>
-      <div class="stat-card ok"><div class="label">Fully Paid — Order Value</div><div class="value">₹${fmt(fullyPaidValue)}</div></div>
-      <div class="stat-card warn"><div class="label">Partially Paid</div><div class="value">${partiallyPaid.length}</div></div>
-      <div class="stat-card warn"><div class="label">Partially Paid — Due</div><div class="value">₹${fmt(partiallyPaidDue)}</div></div>
-      <div class="stat-card ok"><div class="label">Delivered</div><div class="value">${delivered.length}</div></div>
-      <div class="stat-card ok"><div class="label">Delivered — Order Value</div><div class="value">₹${fmt(deliveredValue)}</div></div>
-      <div class="stat-card accent"><div class="label">To Be Delivered</div><div class="value">${toBeDelivered.length}</div></div>
-      <div class="stat-card accent"><div class="label">To Be Delivered — Order Value</div><div class="value">₹${fmt(toBeDeliveredValue)}</div></div>
-      <div class="stat-card accent"><div class="label">To Be Delivered — Due</div><div class="value">₹${fmt(toBeDeliveredDue)}</div></div>
+  const entries = Object.entries(groups).map(([label,g])=>({ label, ...g })).sort((a,b)=>b.orderValue-a.orderValue);
+
+  const totals = { count:0, orderValue:0, paidCount:0, paidValue:0, dueValue:0, byStatus:{} };
+  entries.forEach(e=>{
+    totals.count += e.count; totals.orderValue += e.orderValue;
+    totals.paidCount += e.paidCount; totals.paidValue += e.paidValue; totals.dueValue += e.dueValue;
+    statusesUsed.forEach(s=>{
+      if(!totals.byStatus[s]) totals.byStatus[s] = { count:0, value:0 };
+      if(e.byStatus[s]){ totals.byStatus[s].count += e.byStatus[s].count; totals.byStatus[s].value += e.byStatus[s].value; }
+    });
+  });
+
+  const statusCell = (g, s) => {
+    const d = g.byStatus[s];
+    if(!d) return `<td class="grp-start status-empty">–</td>`;
+    return `<td class="grp-start">${d.count} <span class="cnt">· ₹${fmt(d.value)}</span></td>`;
+  };
+
+  const rowHtml = e => `<tr>
+    <td>${esc(e.label)}</td>
+    <td>${e.count}</td>
+    <td>₹${fmt(e.orderValue)}</td>
+    <td>${e.paidCount}</td>
+    <td>₹${fmt(e.paidValue)}</td>
+    <td class="due-cell${e.dueValue>0?' has-due':''}">₹${fmt(e.dueValue)}</td>
+    ${statusesUsed.map(s=>statusCell(e,s)).join('')}
+  </tr>`;
+
+  const footHtml = `<tr>
+    <td>Total</td>
+    <td>${totals.count}</td>
+    <td>₹${fmt(totals.orderValue)}</td>
+    <td>${totals.paidCount}</td>
+    <td>₹${fmt(totals.paidValue)}</td>
+    <td class="due-cell${totals.dueValue>0?' has-due':''}">₹${fmt(totals.dueValue)}</td>
+    ${statusesUsed.map(s=>{ const d = totals.byStatus[s]; return `<td class="grp-start">${d&&d.count?`${d.count} <span class="cnt">· ₹${fmt(d.value)}</span>`:'–'}</td>`; }).join('')}
+  </tr>`;
+
+  return `<div class="insight-section">
+    <h3>${esc(title)}</h3>
+    <div class="sub">${esc(sub)}</div>
+    <div class="insight-table-wrap">
+      <table class="insight-table">
+        <thead><tr>
+          <th>${esc(groupField==='seller'?'Seller':'IP / Series')}</th>
+          <th># Ordered</th>
+          <th>Order Value</th>
+          <th># Paid</th>
+          <th>Paid Value</th>
+          <th class="due-cell">Due Value</th>
+          ${statusesUsed.map(s=>`<th class="grp-start">${esc(s)}</th>`).join('')}
+        </tr></thead>
+        <tbody>${entries.map(rowHtml).join('')}</tbody>
+        <tfoot>${footHtml}</tfoot>
+      </table>
     </div>
-  `;
+  </div>`;
+}
+function statusCountSection(title, items, totalCount){
+  if(!items.length) return '';
+  return `<div class="bar-section"><h3>${esc(title)}</h3>` + items.map(i=>{
+    const pct = totalCount ? Math.round(i.count/totalCount*100) : 0;
+    const w = i.count ? Math.max(4,pct) : 0;
+    return `<div class="bar-row">
+      <div class="bar-label"><span class="l">${esc(i.label)}</span><span>${i.count} <span class="pct">(${pct}%)</span></span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${w}%;background:${i.color}"></div></div>
+    </div>`;
+  }).join('') + `</div>`;
+}
+function statusValueSection(title, items, totalValue){
+  if(!items.length) return '';
+  return `<div class="bar-section"><h3>${esc(title)}</h3>` + items.map(i=>{
+    const pct = totalValue ? Math.round(i.value/totalValue*100) : 0;
+    const w = i.value ? Math.max(4,pct) : 0;
+    return `<div class="bar-row">
+      <div class="bar-label"><span class="l">${esc(i.label)}</span><span>₹${fmt(Math.round(i.value))} <span class="pct">(${pct}%)</span></span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${w}%;background:${i.color}"></div></div>
+    </div>`;
+  }).join('') + `</div>`;
+}
+const DONUT_COLORS = ['#4f46e5','#0d9488','#f2b134','#16a34a','#dc2626','#7c3aed','#0891b2','#db2777'];
+function donutChartSection(title, items){
+  if(!items.length) return `<div class="bar-section"><h3>${esc(title)}</h3><div class="insight-table-empty">No figures match these filters.</div></div>`;
+
+  const MAX_SLICES = 7;
+  let sliceItems = items;
+  if(items.length > MAX_SLICES){
+    const top = items.slice(0, MAX_SLICES-1);
+    const rest = items.slice(MAX_SLICES-1);
+    sliceItems = [...top, { label:'Other', count: rest.reduce((s,i)=>s+i.count,0), value: rest.reduce((s,i)=>s+i.value,0) }];
+  }
+
+  const totalValue = sliceItems.reduce((s,i)=>s+i.value,0) || 1;
+  let cumulative = 0;
+  const segs = sliceItems.map((it,i)=>{
+    const pct = Math.round(it.value/totalValue*1000)/10;
+    const color = DONUT_COLORS[i % DONUT_COLORS.length];
+    const dash = `${pct} ${Math.max(0,100-pct)}`;
+    const offset = 25 - cumulative;
+    cumulative += pct;
+    return { color, pct, label: it.label, count: it.count, value: it.value,
+      circle: `<circle class="donut-seg" cx="18" cy="18" r="15.9155" fill="none" stroke="${color}" stroke-width="3.6" stroke-dasharray="${dash}" stroke-dashoffset="${offset}"><title>${esc(it.label)}: ${it.count} figures · ₹${fmt(Math.round(it.value))} (${pct}%)</title></circle>` };
+  });
+
+  const legendHtml = segs.map(s=>`<div class="donut-legend-row">
+      <span class="donut-swatch" style="background:${s.color}"></span>
+      <span class="l">${esc(s.label)} <span class="n">(${s.count})</span></span>
+      <span class="v">₹${fmt(Math.round(s.value))} <span class="n">${s.pct}%</span></span>
+    </div>`).join('');
+
+  return `<div class="bar-section donut-section">
+    <h3>${esc(title)}</h3>
+    <div class="donut-wrap">
+      <div class="donut-chart-holder">
+        <svg viewBox="0 0 36 36" class="donut-svg">
+          <circle cx="18" cy="18" r="15.9155" fill="none" stroke="var(--line)" stroke-width="3.6"></circle>
+          ${segs.map(s=>s.circle).join('')}
+        </svg>
+        <div class="donut-center">
+          <div class="donut-center-value">₹${fmtCompactINR(Math.round(totalValue))}</div>
+          <div class="donut-center-label">Total</div>
+        </div>
+      </div>
+      <div class="donut-legend">${legendHtml}</div>
+    </div>
+  </div>`;
+}
+function renderAnalyticsDashboard(){
+  const el = document.getElementById('analytics-dashboard');
+  if(!el) return;
+  const rows = dbFilteredRows();
+  if(!rows.length){ el.innerHTML = '<div class="empty">No figures match these filters.</div>'; return; }
+
+  const fullyPaidRows = rows.filter(r=>r.paymentStatus==='Paid');
+  const partialRows = rows.filter(r=>r.paymentStatus!=='Paid');
+  const deliveredRows = rows.filter(r=>r.delivery==='Delivered');
+
+  const totalValue = rows.reduce((s,r)=>s+r.totalPrice,0);
+  const totalDue = rows.reduce((s,r)=>s+r.dueAmount,0);
+  const totalPaidValue = totalValue - totalDue;
+  const uncategorized = rows.filter(r=>!r.ip || !r.productType).length;
+  const undelivered = rows.length - deliveredRows.length;
+
+  const overviewHtml = `<div class="dash-grid">
+      <div class="stat-card"><div class="label">Figurines</div><div class="value">${rows.length}</div></div>
+      <div class="stat-card accent"><div class="label">Total Value</div><div class="value">₹${fmt(totalValue)}</div></div>
+      <div class="stat-card warn"><div class="label">Outstanding Due</div><div class="value">₹${fmt(totalDue)}</div></div>
+      <div class="stat-card ${undelivered?'warn':'ok'}"><div class="label">Undelivered</div><div class="value">${undelivered}</div></div>
+    </div>`;
+
+  const insightSub = 'Delivery-status columns show # figures · order value';
+  const sellerTableHtml = insightTable(rows, 'seller', 'Seller Breakdown', insightSub);
+  const ipTableHtml = insightTable(rows, 'ip', 'IP / Series Breakdown', insightSub);
+
+  const paymentCountHtml = statusCountSection('Payment Status — by Count', [
+    { label:'Fully Paid', count:fullyPaidRows.length, color:'var(--ok)' },
+    { label:'Partially Paid', count:partialRows.length, color:'var(--warn)' }
+  ], rows.length);
+  const paymentValueHtml = statusValueSection('Payment Status — by Value', [
+    { label:'Paid', value: totalPaidValue, color:'var(--ok)' },
+    { label:'Due', value: totalDue, color:'var(--warn)' }
+  ], totalValue);
+
+  const statusOrder = deliveryStatusOptionsList();
+  const usedStatuses = statusOrder.filter(s=>rows.some(r=>r.delivery===s));
+  rows.forEach(r=>{ if(r.delivery && !usedStatuses.includes(r.delivery)) usedStatuses.push(r.delivery); });
+  const STATUS_COLORS = { 'Delivered':'var(--ok)', 'In transit':'#2563eb', 'Ordered':'var(--accent-2)' };
+  const STATUS_DISPLAY = { 'Ordered':'Ordered (Awaiting Shipment)' };
+  const FALLBACK_COLORS = ['#7c3aed','#0891b2','#db2777','#4f46e5'];
+  let fbIdx = 0;
+  const deliveryItems = usedStatuses.map(s=>{
+    const statusRows = rows.filter(r=>r.delivery===s);
+    return { label: STATUS_DISPLAY[s] || s, count: statusRows.length, value: statusRows.reduce((a,r)=>a+r.totalPrice,0), color: STATUS_COLORS[s] || FALLBACK_COLORS[fbIdx++ % FALLBACK_COLORS.length] };
+  });
+  const deliveryCountHtml = statusCountSection('Delivery Status — by Count', deliveryItems, rows.length);
+  const deliveryValueHtml = statusValueSection('Delivery Status — by Value', deliveryItems, totalValue);
+
+  const productTypeDonutHtml = donutChartSection('Spend by Product Type', groupBy(rows,'productType'));
+
+  const attentionHtml = uncategorized ? `<div class="bar-section">
+      <h3>Needs Attention</h3>
+      <div class="sub" style="margin-bottom:10px">${uncategorized} figure${uncategorized===1?'':'s'} in this view ${uncategorized===1?'is':'are'} missing an IP or Product Type tag.</div>
+      <button class="btn btn-sm btn-dark" onclick="setPage('collection'); openCategorizeModal();">🏷 Categorize Now</button>
+    </div>` : '';
+
+  el.innerHTML = overviewHtml + sellerTableHtml + ipTableHtml
+    + `<div class="insight-row">${paymentCountHtml}${paymentValueHtml}</div>`
+    + `<div class="insight-row">${deliveryCountHtml}${deliveryValueHtml}</div>`
+    + productTypeDonutHtml
+    + attentionHtml;
 }
 
 /* ===================== Render list ===================== */
@@ -524,9 +1425,9 @@ function fmt(n){ return Number(n||0).toLocaleString('en-IN'); }
 function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 function render(){
-  renderDashboard();
-  updateSelectBar();
   const rows = filteredSorted();
+  renderDashboard(rows);
+  updateSelectBar();
   if(STATE.view==='gallery'){
     document.getElementById('gallery').classList.remove('hidden');
     document.getElementById('table-wrap').classList.add('hidden');
@@ -694,6 +1595,7 @@ function setView(v){
   document.getElementById('btn-table').classList.toggle('active', v==='table');
   render();
 }
+initFilterBars();
 setView(STATE.view);
 
 function toast(msg){
@@ -704,6 +1606,98 @@ function toast(msg){
 /* ===================== Modals ===================== */
 const modalRoot = document.getElementById('modal-root');
 function closeModal(){ modalRoot.innerHTML=''; }
+
+/* ---- Admin panel: add/remove custom IP & Product Type filter options (local to this browser — never touches the Sheet) ---- */
+const ADMIN_KINDS = {
+  ip: { lsKey: 'customIp', label: 'IP / Series', presets: IP_PRESETS, optionsFn: ()=>ipOptionsList() },
+  type: { lsKey: 'customType', label: 'Product Type', presets: PRODUCT_TYPE_OPTIONS, optionsFn: ()=>productTypeOptionsList() },
+  delivery: { lsKey: 'customDelivery', label: 'Delivery Status', presets: DELIVERY_PRESETS, optionsFn: ()=>deliveryStatusOptionsList() }
+};
+function openAdminPanel(){
+  modalRoot.innerHTML = `
+    <div class="overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal" style="max-width:520px">
+        <button class="close-x" onclick="closeModal()">&times;</button>
+        <h2>Manage Filter Options</h2>
+        <div class="sub">Add or remove the values each filter offers — changes show up everywhere, in the toolbar filters and the Add/Edit forms. This only affects this browser, it never touches your Sheet.</div>
+        <div id="admin-ip-section"></div>
+        <div id="admin-type-section" style="margin-top:18px"></div>
+        <div id="admin-delivery-section" style="margin-top:18px"></div>
+        <div id="admin-seller-section" style="margin-top:18px"></div>
+        <div style="margin-top:18px">
+          <div class="field"><label>Payment &amp; Purchase Type</label></div>
+          <div class="msel-empty">Not editable here — Payment status is calculated from Paid vs Total Price, and Purchase Type (Individual Figure vs Group Buy) decides which form an order uses, so neither is a simple pick-list. Ask if you'd like a third state added to either — it's a small code change, just not a self-serve one.</div>
+        </div>
+        <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Done</button></div>
+      </div>
+    </div>`;
+  renderAdminSection('ip');
+  renderAdminSection('type');
+  renderAdminSection('delivery');
+  renderSellerAdminSection();
+}
+function renderAdminSection(kind){
+  const {lsKey, label, presets, optionsFn} = ADMIN_KINDS[kind];
+  const el = document.getElementById('admin-' + kind + '-section');
+  const custom = getCustomList(LS[lsKey]);
+  el.innerHTML = `
+    <div class="field"><label>${esc(label)}</label></div>
+    <div class="row2" style="margin-bottom:10px">
+      <input type="text" id="admin-${kind}-new" placeholder="Add a new ${esc(label)} value…" onkeydown="if(event.key==='Enter')adminAddOption('${kind}')">
+      <button class="btn btn-sm btn-dark" onclick="adminAddOption('${kind}')">+ Add</button>
+    </div>
+    <div class="chips" style="gap:8px">
+      ${presets.map(p=>`<span class="chip ordered" title="Built-in preset">${esc(p)}</span>`).join('')}
+      ${custom.map(v=>`<span class="chip pending" style="display:inline-flex;align-items:center;gap:6px">${esc(v)} <button type="button" style="background:none;border:none;color:inherit;font-weight:900;cursor:pointer;padding:0" onclick="adminRemoveOption('${kind}','${escJs(v)}')">✕</button></span>`).join('')}
+    </div>
+    ${custom.length===0?'<div class="msel-empty" style="padding-top:6px">No custom values added yet.</div>':''}
+  `;
+}
+function adminAddOption(kind){
+  const {lsKey} = ADMIN_KINDS[kind];
+  const input = document.getElementById('admin-' + kind + '-new');
+  const v = input.value.trim();
+  if(!v){ toast('Enter a value first'); return; }
+  const ok = addCustomOption(LS[lsKey], v);
+  if(!ok){ toast('That value already exists'); return; }
+  input.value = '';
+  renderAdminSection(kind);
+  refreshAllMselButtons('col'); refreshAllMselButtons('db');
+  toast(`Added "${v}" — it'll show up in filters and forms now`);
+}
+function adminRemoveOption(kind, value){
+  const {lsKey} = ADMIN_KINDS[kind];
+  removeCustomOption(LS[lsKey], value);
+  renderAdminSection(kind);
+  refreshAllMselButtons('col'); refreshAllMselButtons('db');
+}
+/* ---- Seller admin: sellers come from the Sheet itself, so there's nothing to "add" here (that
+   already happens inline via "+ Add New Seller" in any Select Seller dropdown) — this only lets
+   you hide a seller from dropdowns/filters in this browser. Hiding never touches the Sheet, and a
+   hidden seller's existing orders/figures still show and filter normally. ---- */
+function renderSellerAdminSection(){
+  const el = document.getElementById('admin-seller-section');
+  const hidden = new Set(getCustomList(LS.hiddenSellers).map(v=>v.toLowerCase()));
+  const sellers = STATE.sellers.map(s=>s['Seller Name']).filter(Boolean);
+  el.innerHTML = `
+    <div class="field"><label>Seller</label></div>
+    <div class="msel-empty" style="padding-bottom:8px">New sellers are added inline from any "Select seller…" dropdown. Click one below to hide or show it in dropdowns and filters.</div>
+    <div class="chips" style="gap:8px">
+      ${sellers.length===0?'<div class="msel-empty">No sellers yet.</div>':sellers.map(s=>{
+        const isHidden = hidden.has(s.toLowerCase());
+        return `<span class="chip" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;background:${isHidden?'#edeff2':'#dcfce7'};color:${isHidden?'#9ca3af':'var(--ok)'}" onclick="adminToggleSeller('${escJs(s)}')" title="${isHidden?'Hidden — click to show':'Visible — click to hide'}">${esc(s)} · ${isHidden?'Hidden':'Visible'}</span>`;
+      }).join('')}
+    </div>
+  `;
+}
+function adminToggleSeller(name){
+  const hidden = getCustomList(LS.hiddenSellers);
+  const idx = hidden.findIndex(v=>v.toLowerCase()===name.toLowerCase());
+  if(idx>=0) hidden.splice(idx,1); else hidden.push(name);
+  saveCustomList(LS.hiddenSellers, hidden);
+  renderSellerAdminSection();
+  refreshAllMselButtons('col'); refreshAllMselButtons('db');
+}
 
 function openAddModal(){
   modalRoot.innerHTML = `
@@ -722,12 +1716,17 @@ function openAddModal(){
   toggleAddType();
 }
 
-function sellerOptions(){
-  return STATE.sellers.map(s=>`<option value="${esc(s['Seller Name'])}">${esc(s['Seller Name'])}</option>`).join('') + `<option value="__new__">+ Add New Seller</option>`;
+function sellerOptions(selected){
+  const hidden = new Set(getCustomList(LS.hiddenSellers).map(v=>v.toLowerCase()));
+  const list = STATE.sellers.filter(s=>{
+    const name = s['Seller Name'];
+    return !hidden.has((name||'').toLowerCase()) || name === selected;
+  });
+  return list.map(s=>`<option value="${esc(s['Seller Name'])}">${esc(s['Seller Name'])}</option>`).join('') + `<option value="__new__">+ Add New Seller</option>`;
 }
-function sellerFieldHtml(id){
+function sellerFieldHtml(id, selected){
   return `<select id="${id}" onchange="if(this.value==='__new__'){const n=prompt('New seller name:'); if(n){const o=document.createElement('option'); o.value=n;o.textContent=n;o.selected=true; this.insertBefore(o, this.lastElementChild);} else {this.value='';}}">
-    <option value="">Select seller…</option>${sellerOptions()}</select>`;
+    <option value="">Select seller…</option>${sellerOptions(selected)}</select>`;
 }
 function ipFieldHtml(id, selected){
   const opts = ipOptionsList();
@@ -754,7 +1753,7 @@ function toggleAddType(){
       </div>
       <div class="row2">
         <div class="field"><label>Due Amount</label><input id="f-due" class="readonly" readonly value="0"></div>
-        <div class="field"><label>Delivery Status</label><select id="f-delivery-status"><option>Ordered</option><option>In transit</option><option>Delivered</option></select></div>
+        <div class="field"><label>Delivery Status</label><select id="f-delivery-status">${deliveryStatusOptionsList().map(s=>`<option>${esc(s)}</option>`).join('')}</select></div>
       </div>
       <div class="row2">
         <div class="field"><label>Delivery Date (optional)</label><input type="date" id="f-ddate"></div>
@@ -779,7 +1778,7 @@ function toggleAddType(){
       </div>
       <div class="row2">
         <div class="field"><label>Due Amount</label><input id="gb-due" class="readonly" readonly value="0"></div>
-        <div class="field"><label>Bundle Delivery Status</label><select id="gb-delivery"><option>Ordered</option><option>In transit</option><option>Delivered</option></select></div>
+        <div class="field"><label>Bundle Delivery Status</label><select id="gb-delivery">${deliveryStatusOptionsList().map(s=>`<option>${esc(s)}</option>`).join('')}</select></div>
       </div>
       <div class="toggle"><input type="checkbox" id="gb-equal" checked onchange="renderFigureRows()"> Split bundle equally</div>
       <div id="gb-figures" style="margin-top:12px"></div>
@@ -1057,7 +2056,7 @@ function openEditModal(orderId){
         ${fig['Image URL']?`<img src="${esc(fig['Image URL'])}" class="view-figure-img" style="max-height:220px" onclick="openViewModal('${fig['Figure ID']}')">`:''}
         <div class="field"><label>Figurine Name</label><input id="e-name" value="${esc(fig['Figurine Name'])}"></div>
         <div class="row2">
-          <div class="field"><label>Seller</label>${sellerFieldHtml('e-seller')}</div>
+          <div class="field"><label>Seller</label>${sellerFieldHtml('e-seller', o['Seller'])}</div>
           <div class="field"><label>Order Date</label><input type="date" id="e-date" value="${esc(o['Order Date'])}"></div>
         </div>
         <div class="row2">
@@ -1066,7 +2065,7 @@ function openEditModal(orderId){
         </div>
         <div class="row2">
           <div class="field"><label>Due Amount</label><input id="e-due" class="readonly" readonly value="${fmt(o['Due Amount'])}"></div>
-          <div class="field"><label>Delivery Status</label><select id="e-delivery">${['Ordered','In transit','Delivered'].map(s=>`<option ${s===o['Delivery Status']?'selected':''}>${s}</option>`).join('')}</select></div>
+          <div class="field"><label>Delivery Status</label><select id="e-delivery">${deliveryStatusOptionsList().map(s=>`<option ${s===o['Delivery Status']?'selected':''}>${esc(s)}</option>`).join('')}</select></div>
         </div>
         <div class="row2">
           <div class="field"><label>IP / Series</label>${ipFieldHtml('e-ip', fig['IP'])}</div>
@@ -1205,7 +2204,7 @@ function openGroupEditModal(orderId){
           <div class="field"><label>Total Price (₹)</label><input type="number" id="ge-total" value="${o['Total Price']}"></div>
           <div class="field"><label>Paid Amount (₹)</label><input type="number" id="ge-paid" value="${o['Paid Amount']}"></div>
         </div>
-        <div class="field"><label>Delivery Status</label><select id="ge-delivery">${['Ordered','In transit','Delivered'].map(s=>`<option ${s===o['Delivery Status']?'selected':''}>${s}</option>`).join('')}</select></div>
+        <div class="field"><label>Delivery Status</label><select id="ge-delivery">${deliveryStatusOptionsList().map(s=>`<option ${s===o['Delivery Status']?'selected':''}>${esc(s)}</option>`).join('')}</select></div>
         <div class="field"><label>Notes</label><textarea id="ge-notes" rows="2">${esc(o['Notes'])}</textarea></div>
         <div class="modal-actions"><button class="btn btn-ghost" onclick="openGroupModal('${o['Group Buy ID']}')">Back</button><button class="btn btn-primary" onclick="submitGroupEdit('${orderId}')">Save</button></div>
       </div>
@@ -1232,7 +2231,7 @@ function openFigureEditModal(figureId){
         ${f['Image URL']?`<img src="${esc(f['Image URL'])}" class="view-figure-img" style="max-height:200px" onclick="openViewModal('${f['Figure ID']}')">`:''}
         <div class="field"><label>Figurine Name</label><input id="fe-name" value="${esc(f['Figurine Name'])}"></div>
         <div class="field"><label>Allocated Price (₹)</label><input type="number" id="fe-price" value="${f['Allocated Price']}"></div>
-        <div class="field"><label>Delivery Status</label><select id="fe-delivery">${['Ordered','In transit','Delivered'].map(s=>`<option ${s===f['Delivery Status']?'selected':''}>${s}</option>`).join('')}</select></div>
+        <div class="field"><label>Delivery Status</label><select id="fe-delivery">${deliveryStatusOptionsList().map(s=>`<option ${s===f['Delivery Status']?'selected':''}>${esc(s)}</option>`).join('')}</select></div>
         <div class="row2">
           <div class="field"><label>IP / Series</label>${ipFieldHtml('fe-ip', f['IP'])}</div>
           <div class="field"><label>Product Type</label>${productTypeFieldHtml('fe-producttype', f['Product Type'])}</div>
@@ -1273,7 +2272,7 @@ function openGroupSelectedModal(){
         <div class="sub">${figs.length} figures selected: ${figs.map(f=>esc(f['Figurine Name'])).join(', ')}</div>
         <div class="field"><label>Group Buy / Bundle Name</label><input id="grp-name" placeholder="e.g. Dragon Ball Set – August 2026"></div>
         <div class="row2">
-          <div class="field"><label>Seller</label>${sellerFieldHtml('grp-seller')}</div>
+          <div class="field"><label>Seller</label>${sellerFieldHtml('grp-seller', seller)}</div>
           <div class="field"><label>Order Date</label><input type="date" id="grp-date"></div>
         </div>
         <div class="row2">
@@ -1282,7 +2281,7 @@ function openGroupSelectedModal(){
         </div>
         <div class="row2">
           <div class="field"><label>Due Amount</label><input id="grp-due" class="readonly" readonly value="${fmt(Math.max(sumPrice-sumPaid,0))}"></div>
-          <div class="field"><label>Delivery Status</label><select id="grp-delivery"><option>Ordered</option><option>In transit</option><option>Delivered</option></select></div>
+          <div class="field"><label>Delivery Status</label><select id="grp-delivery">${deliveryStatusOptionsList().map(s=>`<option>${esc(s)}</option>`).join('')}</select></div>
         </div>
         <div class="toggle"><input type="checkbox" id="grp-equal" checked onchange="renderGroupSelectedAlloc()"> Split bundle equally</div>
         <div id="grp-alloc" style="margin-top:10px"></div>
