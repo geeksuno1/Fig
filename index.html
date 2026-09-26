@@ -733,18 +733,27 @@ function cardFromFigure(f, om){
   const o = om[f['Order ID']] || {};
   const isGroup = o['Purchase Type'] === 'Group Buy / Bundle';
   const price = Number(f['Allocated Price']||0);
-  let dueAmount, totalPrice;
+  let dueAmount, totalPrice, paidAmount;
+  const hasOwnPaid = isGroup && f['Paid Amount'] !== '' && f['Paid Amount'] !== undefined && f['Paid Amount'] !== null;
   if(isGroup){
-    // reallocate the bundle's total due amount across figures in the same
-    // proportion as the paid amount was allocated (paid share = allocated/bundleTotal)
-    const bundleTotal = Number(o['Total Price']||0);
-    const bundleDue = Number(o['Due Amount']||0);
-    const share = bundleTotal > 0 ? price / bundleTotal : 0;
-    dueAmount = Math.round(bundleDue * share * 100) / 100;
     totalPrice = price;
+    if(hasOwnPaid){
+      // this figure has its own explicitly-recorded payment (set per-figure) — use it directly
+      paidAmount = Number(f['Paid Amount']||0);
+      dueAmount = Math.max(0, Math.round((price - paidAmount) * 100) / 100);
+    } else {
+      // fall back to reallocating the bundle's total due amount across figures in the same
+      // proportion as the paid amount was allocated (paid share = allocated/bundleTotal)
+      const bundleTotal = Number(o['Total Price']||0);
+      const bundleDue = Number(o['Due Amount']||0);
+      const share = bundleTotal > 0 ? price / bundleTotal : 0;
+      dueAmount = Math.round(bundleDue * share * 100) / 100;
+      paidAmount = Math.max(0, Math.round((price - dueAmount) * 100) / 100);
+    }
   } else {
     dueAmount = Number(o['Due Amount']||0);
     totalPrice = Number(o['Total Price']||price);
+    paidAmount = Number(o['Paid Amount']||0);
   }
   return {
     figureId: f['Figure ID'], orderId: f['Order ID'], name: f['Figurine Name'],
@@ -752,7 +761,7 @@ function cardFromFigure(f, om){
     orderDate: o['Order Date']||'', delivery: f['Delivery Status'] || o['Delivery Status'] || 'Ordered',
     paymentStatus: o['Payment Status'] || 'Payment Pending', isGroup, groupBuyName: o['Group Buy Name'],
     groupBuyId: o['Group Buy ID'], imageUrl: f['Image URL'], purchaseType: o['Purchase Type'],
-    dueAmount, ip: f['IP']||'', productType: f['Product Type']||''
+    dueAmount, paidAmount, hasOwnPaid, ip: f['IP']||'', productType: f['Product Type']||''
   };
 }
 function buildCards(){
@@ -1383,7 +1392,7 @@ function sheetTypeOptionsHtml(selected){
 function sheetRowHtml(r, idx){
   const rid = r.figureId;
   const kind = r.isGroup ? 'figure' : 'order';
-  const paidAmt = r.totalPrice - r.dueAmount;
+  const paidAmt = r.paidAmount !== undefined ? r.paidAmount : (r.totalPrice - r.dueAmount);
   const dirty = STATE.sheetDirty.has(rid);
   return `
   <tr id="sheet-row-${rid}" data-row-id="${esc(rid)}" data-order-id="${esc(r.orderId)}" data-kind="${kind}" class="sheet-row${dirty?' dirty':''}">
@@ -1396,9 +1405,7 @@ function sheetRowHtml(r, idx){
       ? `<span class="sheet-readonly" title="Set at the bundle level — use 📦 Edit Bundles">${fmtDate(r.orderDate)}</span>`
       : `<input type="date" class="sheet-input" id="sh-date-${rid}" value="${toDateInputVal(r.orderDate)}" oninput="markSheetDirty('${rid}')">`}</td>
     <td><input type="number" class="sheet-input sheet-num" id="sh-price-${rid}" value="${r.price}" oninput="markSheetDirty('${rid}'); recalcSheetDue('${rid}')"></td>
-    <td>${r.isGroup
-      ? `<span class="sheet-readonly" title="Set at the bundle level — use 📦 Edit Bundles">₹${fmt(paidAmt)}</span>`
-      : `<input type="number" class="sheet-input sheet-num" id="sh-paid-${rid}" value="${paidAmt}" oninput="markSheetDirty('${rid}'); recalcSheetDue('${rid}')">`}</td>
+    <td><input type="number" class="sheet-input sheet-num" id="sh-paid-${rid}" value="${paidAmt}" oninput="markSheetDirty('${rid}'); recalcSheetDue('${rid}')" title="${r.isGroup?'Paid for this figure specifically — the bundle total updates automatically':''}"></td>
     <td><span class="sheet-readonly sheet-due" id="sh-due-${rid}">₹${fmt(r.dueAmount)}</span></td>
     <td><select class="sheet-input" id="sh-delivery-${rid}" onchange="markSheetDirty('${rid}')">${deliveryStatusOptionsList().map(s=>`<option ${s===r.delivery?'selected':''}>${esc(s)}</option>`).join('')}</select></td>
     <td><select class="sheet-input" id="sh-ip-${rid}" onchange="if(this.value==='__new__'){const n=prompt('New IP / series name:'); if(n){const o=document.createElement('option');o.value=n;o.textContent=n;o.selected=true;this.insertBefore(o,this.lastElementChild);} else {this.value='';}} markSheetDirty('${rid}')">${sheetIpOptionsHtml(r.ip)}</select></td>
@@ -1440,7 +1447,7 @@ function recalcSheetDue(rid){
   const priceEl = document.getElementById('sh-price-'+rid);
   const paidEl = document.getElementById('sh-paid-'+rid);
   const dueEl = document.getElementById('sh-due-'+rid);
-  if(!priceEl || !paidEl || !dueEl) return; // bundle-figure rows have no paid input to recompute from
+  if(!priceEl || !paidEl || !dueEl) return;
   const total = Number(priceEl.value||0);
   const paid = Number(paidEl.value||0);
   dueEl.textContent = '₹' + fmt(Math.max(total-paid, 0));
@@ -1470,17 +1477,20 @@ async function saveSheetRow(rid, silent){
       figureId: rid,
       figurineName: (document.getElementById('sh-name-'+rid).value||'').trim(),
       allocatedPrice: Number(document.getElementById('sh-price-'+rid).value||0),
+      paidAmount: Number(document.getElementById('sh-paid-'+rid).value||0),
       deliveryStatus: document.getElementById('sh-delivery-'+rid).value,
       ip: document.getElementById('sh-ip-'+rid).value,
       productType: document.getElementById('sh-type-'+rid).value
     };
     res = await api('updateFigure', payload);
     if(res.ok){
-      f['Figurine Name'] = payload.figurineName;
-      f['Allocated Price'] = payload.allocatedPrice;
-      f['Delivery Status'] = payload.deliveryStatus;
-      f['IP'] = payload.ip;
-      f['Product Type'] = payload.productType;
+      // Setting a figure's own Paid Amount can cascade — it seeds sibling figures' Paid
+      // Amount and recomputes the parent bundle order's Paid/Due/Payment Status on the
+      // backend — so pull fresh data rather than patching only this row locally.
+      STATE.sheetDirty.delete(rid);
+      if(!silent) toast('Saved');
+      await loadData();
+      return true;
     }
   } else {
     const orderId = row.dataset.orderId;
@@ -2150,15 +2160,17 @@ function openGroupModal(groupBuyId){
         </div>
         <div class="stat-card warn" style="margin-top:10px"><div class="label">Remaining</div><div class="value">₹${fmt(o['Due Amount'])}</div></div>
         <table class="gb-table">
-          <thead><tr><th>Figure</th><th>Allocated Price</th><th>Delivery</th><th></th></tr></thead>
-          <tbody>${figs.map(f=>`<tr>
+          <thead><tr><th>Figure</th><th>Allocated Price</th><th>Paid</th><th>Due</th><th>Delivery</th><th></th></tr></thead>
+          <tbody>${figs.map(f=>{ const card = cardFromFigure(f, {[o['Order ID']]: o}); return `<tr>
             <td>${esc(f['Figurine Name'])}</td><td>₹${fmt(f['Allocated Price'])}</td>
+            <td>₹${fmt(card.paidAmount)}</td>
+            <td>${card.dueAmount>0?`₹${fmt(card.dueAmount)}`:'<span class="chip paid">PAID</span>'}</td>
             <td><span class="chip ${chipClass(f['Delivery Status'])}">${esc(f['Delivery Status'])}</span></td>
             <td style="white-space:nowrap">
               <button class="btn btn-sm btn-dark" onclick="openFigureEditModal('${f['Figure ID']}')">Edit</button>
               <button class="btn btn-sm btn-ghost-dark" onclick="removeFigureFromBundleConfirm('${f['Figure ID']}','${o['Group Buy ID']}')">Remove</button>
             </td>
-          </tr>`).join('')}</tbody>
+          </tr>`; }).join('')}</tbody>
         </table>
         <div class="thumb-strip">${figs.filter(f=>f['Image URL']).map(f=>`<img src="${esc(f['Image URL'])}">`).join('')}</div>
         <div class="modal-actions" style="flex-wrap:wrap">
@@ -2200,6 +2212,7 @@ async function submitGroupEdit(orderId){
 }
 function openFigureEditModal(figureId){
   const f = STATE.figures.find(x=>x['Figure ID']===figureId);
+  const card = cardFromFigureId(figureId) || {};
   modalRoot.innerHTML = `
     <div class="overlay" onclick="if(event.target===this)closeModal()">
       <div class="modal">
@@ -2207,7 +2220,11 @@ function openFigureEditModal(figureId){
         <h2>${esc(f['Figurine Name'])}</h2>
         ${f['Image URL']?`<img src="${esc(f['Image URL'])}" class="view-figure-img" style="max-height:200px" onclick="openViewModal('${f['Figure ID']}')">`:''}
         <div class="field"><label>Figurine Name</label><input id="fe-name" value="${esc(f['Figurine Name'])}"></div>
-        <div class="field"><label>Allocated Price (₹)</label><input type="number" id="fe-price" value="${f['Allocated Price']}"></div>
+        <div class="field"><label>Allocated Price (₹)</label><input type="number" id="fe-price" value="${f['Allocated Price']}" oninput="calcDueEditFigure()"></div>
+        <div class="row2">
+          <div class="field"><label>Paid Amount (₹)</label><input type="number" id="fe-paid" value="${card.paidAmount!==undefined?card.paidAmount:''}" oninput="calcDueEditFigure()"></div>
+          <div class="field"><label>Due Amount</label><input id="fe-due" class="readonly" readonly value="${fmt(card.dueAmount)}"></div>
+        </div>
         <div class="field"><label>Delivery Status</label><select id="fe-delivery">${deliveryStatusOptionsList().map(s=>`<option ${s===f['Delivery Status']?'selected':''}>${esc(s)}</option>`).join('')}</select></div>
         <div class="row2">
           <div class="field"><label>IP / Series</label>${ipFieldHtml('fe-ip', f['IP'])}</div>
@@ -2218,11 +2235,17 @@ function openFigureEditModal(figureId){
       </div>
     </div>`;
 }
+function calcDueEditFigure(){
+  const t = Number(document.getElementById('fe-price').value||0);
+  const p = Number(document.getElementById('fe-paid').value||0);
+  document.getElementById('fe-due').value = fmt(Math.max(t-p,0));
+}
 async function submitFigureEdit(figureId){
   const img = await uploadImageIfAny('fe-image');
   const payload = {
     figureId, figurineName: document.getElementById('fe-name').value.trim(),
     allocatedPrice: Number(document.getElementById('fe-price').value||0),
+    paidAmount: Number(document.getElementById('fe-paid').value||0),
     deliveryStatus: document.getElementById('fe-delivery').value,
     ip: document.getElementById('fe-ip').value, productType: document.getElementById('fe-producttype').value
   };
