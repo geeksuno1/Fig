@@ -281,6 +281,19 @@ td img{width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:
 .select-bar{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;
   padding:12px 16px;border-radius:12px;display:flex;align-items:center;gap:14px;box-shadow:var(--shadow);z-index:40;font-size:.85rem}
 .select-bar .btn{padding:8px 14px;font-size:.8rem}
+
+/* ===== Bookmarks (wishlist) ===== */
+.bm-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.bm-toolbar .search{flex:1;min-width:200px}
+.bm-summary{font-size:.85rem;color:var(--text-dim);margin:0 0 14px}
+.bm-summary b{color:var(--ink)}
+#bookmarks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px}
+.bm-card .price{font-size:1.05rem;font-weight:800;margin:2px 0 8px}
+.bm-card .bm-host{font-size:.75rem;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:10px}
+.bm-card .bm-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.bm-card .bm-chips .chip{background:#eef0f3;color:var(--ink)}
+.bm-card .bm-actions{display:flex;gap:8px}
+.bm-card .bm-actions .btn{flex:1;text-decoration:none;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;min-height:36px}
 </style>
 </head>
 <body>
@@ -308,6 +321,7 @@ td img{width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:
       <div class="view-toggle" style="margin-left:0">
         <button id="btn-page-collection" class="active" onclick="setPage('collection')">Collection</button>
         <button id="btn-page-dashboard" onclick="setPage('dashboard')">Dashboard</button>
+        <button id="btn-page-bookmarks" onclick="setPage('bookmarks')">Bookmarks</button>
       </div>
       <button class="btn btn-primary" onclick="openAddModal()">+ Add Order</button>
       <button class="btn btn-sm btn-dark" onclick="openCategorizeModal()">🏷 Categorize</button>
@@ -404,6 +418,23 @@ td img{width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:
       </div>
     </div>
     <div id="analytics-dashboard"></div>
+   </div>
+
+   <div id="page-bookmarks" class="hidden">
+    <div class="toolbar">
+      <div class="bm-toolbar">
+        <input class="search" type="text" id="bm-search" placeholder="Search bookmarks by name, IP, type, site..." oninput="renderBookmarks()">
+        <select id="bm-sort" onchange="renderBookmarks()">
+          <option value="new">Newest first</option>
+          <option value="price-asc">Price: low to high</option>
+          <option value="price-desc">Price: high to low</option>
+          <option value="name">Name A–Z</option>
+        </select>
+        <button class="btn btn-primary" onclick="openBookmarkModal()">+ Add Bookmark</button>
+      </div>
+    </div>
+    <div class="bm-summary" id="bm-summary"></div>
+    <div id="bookmarks-grid"></div>
    </div>
   </main>
 </div>
@@ -537,9 +568,12 @@ function setPage(p){
   STATE.page = p;
   document.getElementById('btn-page-collection').classList.toggle('active', p==='collection');
   document.getElementById('btn-page-dashboard').classList.toggle('active', p==='dashboard');
+  document.getElementById('btn-page-bookmarks').classList.toggle('active', p==='bookmarks');
   document.getElementById('page-collection').classList.toggle('hidden', p!=='collection');
   document.getElementById('page-dashboard').classList.toggle('hidden', p!=='dashboard');
+  document.getElementById('page-bookmarks').classList.toggle('hidden', p!=='bookmarks');
   if(p==='dashboard') renderAnalyticsDashboard();
+  if(p==='bookmarks') renderBookmarks();
 }
 
 async function loadData(){
@@ -549,10 +583,12 @@ async function loadData(){
   STATE.orders = data.orders || [];
   STATE.figures = data.figures || [];
   STATE.sellers = data.sellers || [];
+  STATE.bookmarks = data.bookmarks || [];
   refreshAllMselButtons('col');
   refreshAllMselButtons('db');
   render();
   if(STATE.page === 'dashboard') renderAnalyticsDashboard();
+  if(STATE.page === 'bookmarks') renderBookmarks();
 }
 
 /* option lists = admin-added custom values ∪ presets ∪ whatever's actually used in the data, always deduped, 'Others' pinned last */
@@ -2183,6 +2219,10 @@ function openGroupModal(groupBuyId){
 }
 function openGroupEditModal(orderId){
   const o = STATE.orders.find(x=>x['Order ID']===orderId);
+  const ownPaidFigs = STATE.figures.filter(f=>f['Order ID']===orderId && f['Paid Amount']!=='' && f['Paid Amount']!==undefined && f['Paid Amount']!==null);
+  const perFigNote = ownPaidFigs.length
+    ? `<div class="sub" style="margin:-4px 0 12px;font-size:.78rem">Paid is being tracked per figure. Changing the Paid Amount here resets every figure in this bundle back to a proportional share of the new total.</div>`
+    : '';
   modalRoot.innerHTML = `
     <div class="overlay" onclick="if(event.target===this)closeModal()">
       <div class="modal">
@@ -2193,6 +2233,7 @@ function openGroupEditModal(orderId){
           <div class="field"><label>Total Price (₹)</label><input type="number" id="ge-total" value="${o['Total Price']}"></div>
           <div class="field"><label>Paid Amount (₹)</label><input type="number" id="ge-paid" value="${o['Paid Amount']}"></div>
         </div>
+        ${perFigNote}
         <div class="field"><label>Delivery Status</label><select id="ge-delivery">${deliveryStatusOptionsList().map(s=>`<option ${s===o['Delivery Status']?'selected':''}>${esc(s)}</option>`).join('')}</select></div>
         <div class="field"><label>Notes</label><textarea id="ge-notes" rows="2">${esc(o['Notes'])}</textarea></div>
         <div class="modal-actions"><button class="btn btn-ghost" onclick="openGroupModal('${o['Group Buy ID']}')">Back</button><button class="btn btn-primary" onclick="submitGroupEdit('${orderId}')">Save</button></div>
@@ -2374,6 +2415,124 @@ function openViewModal(figureId){
         </div>
       </div>
     </div>`;
+}
+
+
+/* ===================== Bookmarks (figures you want to buy) ===================== */
+// Only http(s) links are ever rendered as clickable, so a pasted "javascript:" value can't run.
+function bmSafeHref(link){
+  const s = String(link||'').trim();
+  if(!s) return '';
+  if(/^https?:\/\//i.test(s)) return s;
+  if(/^[a-z][a-z0-9+.-]*:/i.test(s)) return '';
+  return 'https://' + s;
+}
+function bmHost(link){
+  try{ return new URL(bmSafeHref(link)).hostname.replace(/^www\./,''); }catch(e){ return ''; }
+}
+function renderBookmarks(){
+  const grid = document.getElementById('bookmarks-grid');
+  if(!grid) return;
+  const all = STATE.bookmarks || [];
+  const q = (document.getElementById('bm-search').value||'').trim().toLowerCase();
+  const sort = document.getElementById('bm-sort').value;
+  let rows = all.filter(b=>{
+    if(!q) return true;
+    return [b['Figurine Name'], b['IP'], b['Product Type'], bmHost(b['Link'])].join(' ').toLowerCase().includes(q);
+  });
+  rows = rows.slice().sort((a,b)=>{
+    if(sort==='price-asc') return Number(a['Price']||0) - Number(b['Price']||0);
+    if(sort==='price-desc') return Number(b['Price']||0) - Number(a['Price']||0);
+    if(sort==='name') return String(a['Figurine Name']).localeCompare(String(b['Figurine Name']));
+    return String(b['Bookmark ID']).localeCompare(String(a['Bookmark ID']));
+  });
+  const total = rows.reduce((s,b)=>s+Number(b['Price']||0),0);
+  document.getElementById('bm-summary').innerHTML = all.length
+    ? `<b>${rows.length}</b> bookmark${rows.length===1?'':'s'}${q?` matching "${esc(q)}"`:''} · total <b>₹${fmt(total)}</b>`
+    : '';
+  if(!all.length){
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1">No bookmarks yet. Save figures you want to buy with <b>+ Add Bookmark</b>.</div>`;
+    return;
+  }
+  if(!rows.length){ grid.innerHTML = `<div class="empty" style="grid-column:1/-1">No bookmarks match your search.</div>`; return; }
+  grid.innerHTML = rows.map(b=>{
+    const href = bmSafeHref(b['Link']);
+    const host = bmHost(b['Link']);
+    const chips = [b['IP'], b['Product Type']].filter(Boolean).map(v=>`<span class="chip">${esc(v)}</span>`).join('');
+    return `<div class="card bm-card" onclick="openBookmarkModal('${esc(b['Bookmark ID'])}')">
+      <div class="img-wrap">${b['Image URL']?`<img src="${esc(b['Image URL'])}" loading="lazy" alt="${esc(b['Figurine Name'])}">`:'<span class="ph">NO IMAGE</span>'}</div>
+      <div class="body">
+        <h3>${esc(b['Figurine Name'])}</h3>
+        <div class="price">₹${fmt(b['Price'])}</div>
+        ${chips?`<div class="bm-chips">${chips}</div>`:''}
+        ${host?`<div class="bm-host" title="${esc(href)}">🔗 ${esc(host)}</div>`:''}
+        <div class="bm-actions">
+          ${href?`<a class="btn btn-sm btn-primary" href="${esc(href)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">Open link ↗</a>`:''}
+          <button class="btn btn-sm btn-dark" onclick="event.stopPropagation(); openBookmarkModal('${esc(b['Bookmark ID'])}')">Edit</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function bmTypeFieldHtml(id, selected){
+  const opts = productTypeOptionsList();
+  if(selected && !opts.includes(selected)) opts.unshift(selected);
+  return `<select id="${id}"><option value="">Select Type…</option>${opts.map(v=>`<option value="${esc(v)}" ${v===selected?'selected':''}>${esc(v)}</option>`).join('')}</select>`;
+}
+function openBookmarkModal(bookmarkId){
+  const b = bookmarkId ? (STATE.bookmarks||[]).find(x=>x['Bookmark ID']===bookmarkId) : null;
+  if(bookmarkId && !b) return;
+  const v = (k)=> b ? (b[k]===undefined||b[k]===null?'':b[k]) : '';
+  modalRoot.innerHTML = `
+    <div class="overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <button class="close-x" onclick="closeModal()">&times;</button>
+        <h2>${b?'Edit Bookmark':'Add Bookmark'}</h2>
+        <div class="sub">A figure you want to buy</div>
+        ${b && b['Image URL']?`<img src="${esc(b['Image URL'])}" class="view-figure-img" style="max-height:200px">`:''}
+        <div class="field"><label>${b && b['Image URL']?'Replace Image':'Image'}</label>${imagePickerHtml('bm-image')}</div>
+        <div class="field"><label>Figurine Name</label><input id="bm-name" value="${esc(v('Figurine Name'))}"></div>
+        <div class="row2">
+          <div class="field"><label>Price (₹)</label><input type="number" id="bm-price" min="0" step="any" value="${esc(v('Price'))}"></div>
+          <div class="field"><label>IP / Series</label>${ipFieldHtml('bm-ip', v('IP'))}</div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Product Type</label>${bmTypeFieldHtml('bm-type', v('Product Type'))}</div>
+          <div class="field"><label>Link to purchase site</label><input type="url" id="bm-link" placeholder="https://…" value="${esc(v('Link'))}"></div>
+        </div>
+        <div class="modal-actions">
+          ${b?`<button class="btn btn-ghost" style="color:var(--danger)" onclick="deleteBookmarkConfirm('${esc(b['Bookmark ID'])}')">Delete</button>`:`<button class="btn btn-ghost" onclick="closeModal()">Cancel</button>`}
+          <button class="btn btn-primary" id="bm-save" onclick="submitBookmark(${b?`'${esc(b['Bookmark ID'])}'`:''})">${b?'Save Changes':'Save Bookmark'}</button>
+        </div>
+      </div>
+    </div>`;
+  if(b && v('IP')){ const ip = document.getElementById('bm-ip'); if(ip && ![...ip.options].some(o=>o.value===v('IP'))){ const o=document.createElement('option'); o.value=v('IP'); o.textContent=v('IP'); o.selected=true; ip.insertBefore(o, ip.lastElementChild); } }
+}
+async function submitBookmark(bookmarkId){
+  const name = document.getElementById('bm-name').value.trim();
+  if(!name){ toast('Figurine name is required'); return; }
+  const link = document.getElementById('bm-link').value.trim();
+  if(link && !bmSafeHref(link)){ toast('The link must be a web address (https://…)'); return; }
+  const btn = document.getElementById('bm-save'); if(btn) btn.disabled = true;
+  const img = await uploadImageIfAny('bm-image');
+  const payload = {
+    figurineName: name,
+    price: Number(document.getElementById('bm-price').value||0),
+    link: link ? bmSafeHref(link) : '',
+    ip: document.getElementById('bm-ip').value,
+    productType: document.getElementById('bm-type').value
+  };
+  if(img){ payload.imageUrl = img.url; payload.driveFileId = img.fileId; }
+  let res;
+  if(bookmarkId){ payload.bookmarkId = bookmarkId; res = await api('updateBookmark', payload); }
+  else res = await api('createBookmark', payload);
+  if(res.ok){ toast(bookmarkId?'Bookmark saved':'Bookmark added'); closeModal(); loadData(); }
+  else { if(btn) btn.disabled = false; toast(res.error); }
+}
+async function deleteBookmarkConfirm(bookmarkId){
+  if(!confirm('Delete this bookmark?')) return;
+  const res = await api('deleteBookmark', { bookmarkId });
+  if(res.ok){ toast('Bookmark deleted'); closeModal(); loadData(); } else toast(res.error);
 }
 
 /* ===================== Boot ===================== */
