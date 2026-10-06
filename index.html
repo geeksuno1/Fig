@@ -295,6 +295,40 @@ td img{width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:
 .bm-card .bm-chips .chip{background:#eef0f3;color:var(--ink)}
 .bm-card .bm-actions{display:flex;gap:8px}
 .bm-card .bm-actions .btn{flex:1;text-decoration:none;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;min-height:36px}
+
+/* ===== Pagination (Gallery + Table views) ===== */
+.pager{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin:18px 0 6px;font-size:.85rem;color:var(--text-dim)}
+.pager .pager-info b{color:var(--ink)}
+.pager .pager-pages{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pager .pg-btn{min-width:38px;height:38px;padding:0 10px;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:9px;font-weight:600;font-size:.85rem}
+.pager .pg-btn:hover:not(:disabled){border-color:#c7cbd4;background:#fafbfc}
+.pager .pg-btn.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.pager .pg-btn:disabled{opacity:.4;cursor:default}
+.pager .pg-gap{padding:0 4px}
+.pager .pager-size{display:flex;align-items:center;gap:6px}
+.pager .pager-size select{height:38px;border:1px solid var(--line);border-radius:9px;padding:0 8px;background:var(--paper)}
+@media (max-width:640px){ .pager{justify-content:center} .pager .pager-info{width:100%;text-align:center} }
+
+/* ===== Saving overlay: greys out the page while a save is in progress ===== */
+.busy-overlay{position:fixed;inset:0;z-index:200;background:rgba(21,23,28,.45);display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .15s ease}
+.busy-overlay.show{opacity:1;pointer-events:auto;cursor:progress}
+.busy-card{background:var(--paper);border-radius:14px;box-shadow:var(--shadow);padding:22px 26px;width:min(320px,calc(100vw - 32px));text-align:center}
+.busy-spinner{width:34px;height:34px;margin:0 auto 12px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--accent);animation:busy-spin .8s linear infinite}
+.busy-label{font-weight:700;font-size:1rem;color:var(--ink)}
+.busy-detail{font-size:.8rem;color:var(--text-dim);margin-top:4px;min-height:1.2em}
+.busy-bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin-top:14px;position:relative}
+.busy-bar-fill{position:absolute;top:0;bottom:0;left:0;width:35%;border-radius:3px;background:var(--accent);animation:busy-slide 1.1s ease-in-out infinite}
+.busy-bar.determinate .busy-bar-fill{animation:none;transition:width .25s ease}
+.busy-overlay.done .busy-spinner{animation:none;border-color:var(--ok);display:flex;align-items:center;justify-content:center}
+.busy-overlay.done .busy-spinner::after{content:"✓";color:var(--ok);font-weight:800;font-size:1.1rem}
+.busy-overlay.done .busy-bar-fill{animation:none;width:100%;background:var(--ok)}
+@keyframes busy-spin{to{transform:rotate(360deg)}}
+@keyframes busy-slide{0%{left:-35%}100%{left:100%}}
+@media (prefers-reduced-motion:reduce){
+  .busy-spinner{animation-duration:2.4s}
+  .busy-bar-fill{animation:none;width:100%;opacity:.5}
+}
 </style>
 </head>
 <body>
@@ -387,6 +421,7 @@ td img{width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:
         <tbody id="table-body"></tbody>
       </table>
     </div>
+    <div id="pager" class="pager hidden" aria-label="Pages"></div>
     <div id="sheet-wrap" class="table-wrap hidden">
       <div class="sheet-toolbar">
         <div class="sheet-toolbar-left">
@@ -441,6 +476,14 @@ td img{width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:
 </div>
 
 <div id="modal-root"></div>
+<div id="busy-overlay" class="busy-overlay" role="status" aria-live="polite" aria-hidden="true">
+  <div class="busy-card">
+    <div class="busy-spinner" aria-hidden="true"></div>
+    <div class="busy-label" id="busy-label">Saving…</div>
+    <div class="busy-detail" id="busy-detail"></div>
+    <div class="busy-bar" id="busy-bar"><div class="busy-bar-fill" id="busy-bar-fill"></div></div>
+  </div>
+</div>
 
 <script>
 /* ===================== Config & Auth ===================== */
@@ -448,7 +491,7 @@ const LS = {
   apiUrl: 'afv_api_url', token: 'afv_token', view: 'afv_view',
   customIp: 'afv_custom_ip', customType: 'afv_custom_type',
   customDelivery: 'afv_custom_delivery', hiddenSellers: 'afv_hidden_sellers',
-  spendCollapsed: 'afv_spend_collapsed', dataCache: 'afv_data_cache'
+  spendCollapsed: 'afv_spend_collapsed', dataCache: 'afv_data_cache', pageSize: 'afv_page_size'
 };
 const IP_PRESETS = ['Dragon Ball','One Piece','MHA','Cartoon Network','DC','Marvel','Naruto','One Punch Man','Pokemon','Others'];
 const PRODUCT_TYPE_OPTIONS = ['Funko Pop','Banpresto','Gunpla','Bandai Kits','3D Prints','Others'];
@@ -514,7 +557,85 @@ function saveApiUrlFromSettings(){
   loadData();
 }
 
-async function api(action, payload, method){
+// Saves ask the backend to send the fresh data back with the reply, so the loadData() that
+// follows a save uses it straight away instead of making a second trip to Google.
+const NO_SNAPSHOT_ACTIONS = { getAll: true, login: true, ping: true, uploadImage: true };
+let PENDING_SNAPSHOT = null;
+/* ---- Saving overlay ----
+   Every save greys out the page with a progress card the moment the button is pressed, so it's
+   clear the click registered (and a second click can't send the save twice). It covers the photo
+   upload, the save itself and refreshing the page, then flashes "Saved ✓" and closes. */
+const BUSY_LABELS = {
+  createOrder: 'Saving order…', updateOrder: 'Saving changes…', updateFigure: 'Saving changes…',
+  deleteOrder: 'Deleting…', groupExistingOrders: 'Creating bundle…', removeFromBundle: 'Removing from bundle…',
+  ungroupBundle: 'Ungrouping bundle…', bulkSetCategory: 'Tagging figures…', addSeller: 'Adding seller…',
+  createBookmark: 'Saving bookmark…', updateBookmark: 'Saving bookmark…', deleteBookmark: 'Deleting bookmark…',
+  uploadImage: 'Uploading photo…'
+};
+const BUSY_DONE = { deleteOrder: 'Deleted', deleteBookmark: 'Deleted', ungroupBundle: 'Ungrouped' };
+const Busy = { count: 0, hideTimer: null, slowTimer: null, visible: false, lastAction: null, progress: null };
+function busyEls(){ return { o: document.getElementById('busy-overlay'), l: document.getElementById('busy-label'), d: document.getElementById('busy-detail'), bar: document.getElementById('busy-bar'), fill: document.getElementById('busy-bar-fill') }; }
+function busyStart(label, action){
+  const e = busyEls(); if(!e.o) return;
+  clearTimeout(Busy.hideTimer); clearTimeout(Busy.slowTimer);
+  Busy.count++; Busy.visible = true; if(action) Busy.lastAction = action;
+  e.o.classList.remove('done'); e.o.classList.add('show'); e.o.setAttribute('aria-hidden', 'false');
+  e.l.textContent = label;
+  if(!Busy.progress) e.d.textContent = '';
+  Busy.slowTimer = setTimeout(()=>{ if(Busy.count && !Busy.progress) e.d.textContent = 'Still working — Google can take a few seconds…'; }, 6000);
+  if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
+}
+function busyEnd(ok){
+  const e = busyEls(); if(!e.o) return;
+  Busy.count = Math.max(0, Busy.count - 1);
+  if(Busy.count) return;
+  clearTimeout(Busy.slowTimer);
+  if(Busy.progress) return; // a multi-row save is still running; it closes the overlay itself
+  if(ok){
+    // short pause before "Saved ✓" so a follow-up step (e.g. save after photo upload) continues seamlessly
+    Busy.hideTimer = setTimeout(()=>{
+      e.o.classList.add('done');
+      e.l.textContent = BUSY_DONE[Busy.lastAction] || 'Saved'; // the spinner turns into a green tick
+      e.d.textContent = '';
+      Busy.hideTimer = setTimeout(busyHide, 500);
+    }, 100);
+  } else {
+    busyHide(); // the error itself is shown as a message
+  }
+}
+function busyHide(){
+  const e = busyEls(); if(!e.o) return;
+  clearTimeout(Busy.hideTimer); clearTimeout(Busy.slowTimer);
+  Busy.count = 0; Busy.visible = false; Busy.lastAction = null;
+  e.o.classList.remove('show', 'done'); e.o.setAttribute('aria-hidden', 'true');
+  e.bar.classList.remove('determinate'); e.fill.style.width = '';
+}
+// Real progress for multi-step saves (Save All in the edit grid): "Saving row 3 of 7" + a filling bar.
+function busyProgress(done, total, label){
+  const e = busyEls(); if(!e.o) return;
+  if(done === null){ Busy.progress = null; e.bar.classList.remove('determinate'); e.fill.style.width = ''; return; }
+  Busy.progress = { done, total };
+  clearTimeout(Busy.hideTimer);
+  e.o.classList.remove('done'); e.o.classList.add('show'); e.o.setAttribute('aria-hidden', 'false'); Busy.visible = true;
+  if(label) e.l.textContent = label;
+  e.d.textContent = `${Math.min(done + 1, total)} of ${total}`;
+  e.bar.classList.add('determinate'); e.fill.style.width = Math.round(done / total * 100) + '%';
+}
+
+async function api(action, payload, method, opts){
+  const label = BUSY_LABELS[action] || (action === 'getAll' && Busy.visible ? 'Updating your collection…' : null);
+  if(!label || (opts && opts.quiet)) return apiRequest(action, payload, method, opts);
+  busyStart(label, BUSY_LABELS[action] ? action : null);
+  let ok = false;
+  try{
+    const res = await apiRequest(action, payload, method, opts);
+    ok = !!(res && res.ok);
+    return res;
+  } finally {
+    busyEnd(ok);
+  }
+}
+async function apiRequest(action, payload, method, opts){
   const url = getApiUrl();
   if(!url){ toast('Set the Apps Script Web App URL first'); throw new Error('no api url'); }
   const token = localStorage.getItem(LS.token) || '';
@@ -522,12 +643,24 @@ async function api(action, payload, method){
     const res = await fetch(url + '?action=' + encodeURIComponent(action) + '&token=' + encodeURIComponent(token));
     return res.json();
   }
+  const wantSnapshot = !NO_SNAPSHOT_ACTIONS[action] && !(opts && opts.noSnapshot);
+  const body = { action, token, payload };
+  if(wantSnapshot) body.snapshot = true;
   const res = await fetch(url, {
     method: 'POST',
     headers: {'Content-Type':'text/plain;charset=utf-8'}, // avoids CORS preflight against Apps Script
-    body: JSON.stringify({ action, token, payload })
+    body: JSON.stringify(body)
   });
-  return res.json();
+  const data = await res.json();
+  if(data && data.snapshot){
+    if(data.ok) PENDING_SNAPSHOT = { data: data.snapshot, at: Date.now() };
+    delete data.snapshot;
+  }
+  return data;
+}
+function takePendingSnapshot(){
+  const s = PENDING_SNAPSHOT; PENDING_SNAPSHOT = null;
+  return (s && Date.now() - s.at < 60000) ? s.data : null; // only trust it right after the save
 }
 
 async function doLogin(){
@@ -564,7 +697,9 @@ let STATE = {
   filters: { seller: new Set(), delivery: new Set(), payment: new Set(), type: new Set(), ip: new Set(), productType: new Set() },
   dbFilters: { seller: new Set(), delivery: new Set(), payment: new Set(), type: new Set(), ip: new Set(), productType: new Set() },
   prevView: 'gallery', sheetDirty: new Set(), sheetRows: [],
-  spendCollapsed: localStorage.getItem(LS.spendCollapsed) !== 'false'
+  spendCollapsed: localStorage.getItem(LS.spendCollapsed) !== 'false',
+  pageNum: 1, querySig: null,
+  pageSize: (function(){ try{ const v = localStorage.getItem(LS.pageSize); return v === null ? 48 : Number(v); }catch(e){ return 48; } })()
 };
 
 function setPage(p){
@@ -625,8 +760,12 @@ async function loadData(){
     setSyncState('Updating…');
   }
   let data;
-  try{ data = await api('getAll'); }
-  catch(e){ data = { ok:false, error:'Could not reach the backend. Check your connection.' }; }
+  const fromSave = LOADED_ONCE ? takePendingSnapshot() : null;
+  if(fromSave){ data = Object.assign({ ok:true }, fromSave); }
+  else {
+    try{ data = await api('getAll'); }
+    catch(e){ data = { ok:false, error:'Could not reach the backend. Check your connection.' }; }
+  }
   setSyncState('');
   if(!data.ok){
     if(data.error==='Unauthorized'){ clearDataCache(); localStorage.removeItem(LS.token); location.reload(); return; }
@@ -1297,19 +1436,86 @@ function render(){
   document.getElementById('gallery').classList.add('hidden');
   document.getElementById('table-wrap').classList.add('hidden');
   document.getElementById('sheet-wrap').classList.add('hidden');
+  // A new search / filter / sort / view starts again at page 1; reloading data after a save keeps your page.
+  const sig = querySignature();
+  if(sig !== STATE.querySig){ STATE.querySig = sig; STATE.pageNum = 1; }
   if(STATE.view==='gallery'){
     document.getElementById('gallery').classList.remove('hidden');
-    renderGallery(rows);
+    const pg = paginate(rows);
+    renderGallery(pg.items, pg.offset);
+    renderPager(pg);
   } else if(STATE.view==='sheet'){
     document.getElementById('sheet-wrap').classList.remove('hidden');
-    renderSheet(rows);
+    renderSheet(rows); // the edit grid keeps every row on one page so unsaved edits are never paged away
+    renderPager(null);
   } else {
     document.getElementById('table-wrap').classList.remove('hidden');
-    renderTable(rows);
+    const pg = paginate(rows);
+    renderTable(pg.items, pg.offset);
+    renderPager(pg);
   }
 }
 
-function renderGallery(rows){
+/* ---- Pagination ---- */
+const PAGE_SIZES = [24, 48, 96, 200, 0]; // 0 = all
+function querySignature(){
+  const F = STATE.filters;
+  return JSON.stringify([STATE.view, document.getElementById('f-search').value.trim().toLowerCase(), document.getElementById('f-sort').value,
+    Object.keys(F).sort().map(k=>[k, Array.from(F[k]).sort()])]);
+}
+function paginate(rows){
+  const size = STATE.pageSize || 0;
+  const total = rows.length;
+  const pages = size ? Math.max(1, Math.ceil(total / size)) : 1;
+  STATE.pageNum = Math.min(Math.max(1, STATE.pageNum || 1), pages); // e.g. the last item on the last page was deleted
+  const offset = size ? (STATE.pageNum - 1) * size : 0;
+  return { items: size ? rows.slice(offset, offset + size) : rows, offset, page: STATE.pageNum, pages, total, size };
+}
+function pageNumbers(page, pages){
+  // 1 … 4 5 [6] 7 8 … 20
+  const out = []; const add = (n)=>{ if(!out.includes(n)) out.push(n); };
+  add(1);
+  for(let n = page - 2; n <= page + 2; n++) if(n > 1 && n < pages) add(n);
+  if(pages > 1) add(pages);
+  out.sort((a,b)=>a-b);
+  const withGaps = [];
+  out.forEach((n,i)=>{ if(i && n - out[i-1] > 1) withGaps.push('…'); withGaps.push(n); });
+  return withGaps;
+}
+function renderPager(pg){
+  const el = document.getElementById('pager');
+  if(!el) return;
+  if(!pg || !pg.total){ el.classList.add('hidden'); el.innerHTML = ''; return; }
+  el.classList.remove('hidden');
+  const from = pg.offset + 1, to = pg.offset + pg.items.length;
+  const sizeOpts = PAGE_SIZES.map(s=>`<option value="${s}" ${s===(STATE.pageSize||0)?'selected':''}>${s?s:'All'}</option>`).join('');
+  const pagesHtml = pg.pages > 1 ? `
+    <div class="pager-pages">
+      <button class="pg-btn" onclick="goToPage(${pg.page-1})" ${pg.page<=1?'disabled':''} aria-label="Previous page">‹ Prev</button>
+      ${pageNumbers(pg.page, pg.pages).map(n=> n==='…' ? '<span class="pg-gap">…</span>'
+        : `<button class="pg-btn ${n===pg.page?'active':''}" onclick="goToPage(${n})" ${n===pg.page?'aria-current="page"':''}>${n}</button>`).join('')}
+      <button class="pg-btn" onclick="goToPage(${pg.page+1})" ${pg.page>=pg.pages?'disabled':''} aria-label="Next page">Next ›</button>
+    </div>` : '';
+  el.innerHTML = `
+    <div class="pager-info">Showing <b>${from}–${to}</b> of <b>${pg.total}</b></div>
+    ${pagesHtml}
+    <label class="pager-size">Per page <select onchange="setPageSize(this.value)">${sizeOpts}</select></label>`;
+}
+function goToPage(n){
+  STATE.pageNum = n;
+  render();
+  const anchor = document.querySelector('#page-collection .toolbar');
+  if(anchor) window.scrollTo({ top: anchor.getBoundingClientRect().top + window.scrollY - 70, behavior: 'smooth' });
+}
+function setPageSize(v){
+  STATE.pageSize = Number(v) || 0;
+  try{ localStorage.setItem(LS.pageSize, String(STATE.pageSize)); }catch(e){}
+  STATE.pageNum = 1;
+  render();
+}
+
+function renderGallery(rows, offset){
+  offset = offset || 0;
   const el = document.getElementById('gallery');
   if(!rows.length){ el.innerHTML = '<div class="empty">No figures match your filters yet.</div>'; return; }
   const catMode = STATE.categorizeMode;
@@ -1322,14 +1528,14 @@ function renderGallery(rows){
     if(catMode){ cardClick = `toggleCategorizeFigure('${r.figureId}')`; }
     else if(STATE.selectMode){ cardClick = selectable ? `toggleSelectFigure('${r.figureId}')` : ''; }
     else { cardClick = r.isGroup ? `openGroupModal('${r.groupBuyId}')` : `openEditModal('${r.orderId}')`; }
-    const imgClick = (STATE.selectMode||catMode) ? cardClick : `event.stopPropagation(); openViewModal('${r.figureId}')`;
+    const imgClick = (STATE.selectMode||catMode) ? (cardClick ? `event.stopPropagation(); ${cardClick}` : '') : `event.stopPropagation(); openViewModal('${r.figureId}')`; // stopPropagation: otherwise a tap on the photo toggled the card twice
     const showCheckbox = catMode ? catSelectable : selectable;
     const isChecked = catMode ? catChecked : checked;
     const toggleFn = catMode ? 'toggleCategorizeFigure' : 'toggleSelectFigure';
     return `
     <div class="card ${isChecked?'selected-card':''}" onclick="${cardClick}">
       <div class="img-wrap" onclick="${imgClick}">
-        <span class="badge" style="left:auto;right:8px;background:var(--ink);color:#fff">#${idx+1}</span>
+        <span class="badge" style="left:auto;right:8px;background:var(--ink);color:#fff">#${offset+idx+1}</span>
         ${showCheckbox ? `<input type="checkbox" class="card-checkbox" style="right:auto;left:8px" ${isChecked?'checked':''} onclick="event.stopPropagation(); ${toggleFn}('${r.figureId}')">` : ''}
         ${r.isGroup ? '<span class="badge">GROUP BUY</span>' : ''}
         ${r.imageUrl ? `<img src="${esc(thumbUrl(r.imageUrl, THUMB_CARD))}" loading="lazy" decoding="async">` : '<span class="ph">NO IMAGE</span>'}
@@ -1439,12 +1645,13 @@ async function applyCategorize(){
   } else toast(res.error);
 }
 
-function renderTable(rows){
+function renderTable(rows, offset){
+  offset = offset || 0;
   const tb = document.getElementById('table-body');
   if(!rows.length){ tb.innerHTML = '<tr><td colspan="11" class="empty">No results</td></tr>'; return; }
   tb.innerHTML = rows.map((r,idx)=>`
     <tr>
-      <td>${idx+1}</td>
+      <td>${offset+idx+1}</td>
       <td>${r.imageUrl?`<img src="${esc(thumbUrl(r.imageUrl, THUMB_ROW))}" loading="lazy" decoding="async" width="36" height="36" onclick="openViewModal('${r.figureId}')" style="cursor:zoom-in">`:''}</td>
       <td>${esc(r.name)}${r.isGroup?' <span class="badge" style="position:static">GB</span>':''}</td>
       <td>${esc(r.seller)}</td>
@@ -1594,7 +1801,7 @@ async function saveSheetRow(rid, silent){
       ip: document.getElementById('sh-ip-'+rid).value,
       productType: document.getElementById('sh-type-'+rid).value
     };
-    res = await api('updateOrder', payload);
+    res = await api('updateOrder', payload, undefined, { noSnapshot: true }); // this row is patched locally, no reload needed
     if(res.ok){
       o['Seller'] = payload.seller;
       o['Order Date'] = payload.orderDate;
@@ -1630,9 +1837,16 @@ async function saveAllSheetRows(){
   const ids = Array.from(STATE.sheetDirty);
   if(!ids.length) return;
   let okCount = 0, failCount = 0;
-  for(const rid of ids){
-    const ok = await saveSheetRow(rid, true);
-    if(ok) okCount++; else failCount++;
+  try{
+    for(let i = 0; i < ids.length; i++){
+      busyProgress(i, ids.length, 'Saving rows…');
+      const ok = await saveSheetRow(ids[i], true);
+      if(ok) okCount++; else failCount++;
+    }
+  } finally {
+    busyProgress(null);
+    if(failCount) busyHide();
+    else { Busy.lastAction = null; Busy.count = 1; busyEnd(true); }
   }
   toast(`Saved ${okCount} row${okCount===1?'':'s'}${failCount?`, ${failCount} failed — fix and retry`:''}`);
 }
@@ -2024,7 +2238,9 @@ function applyAdjuster(){
 async function uploadImageIfAny(pickerId){
   const blob = pickerFiles[pickerId];
   if(!blob) return null;
-  const b64 = await fileToBase64(blob);
+  busyStart('Preparing photo…'); // show the overlay right away; converting a big photo can take a moment
+  let b64;
+  try{ b64 = await fileToBase64(blob); } finally { busyEnd(true); }
   const res = await api('uploadImage', { base64Data: b64, mimeType: 'image/jpeg', fileName: pickerId+'.jpg' });
   if(!res.ok){ toast('Image upload failed: '+res.error); return null; }
   delete pickerFiles[pickerId];
