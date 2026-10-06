@@ -40,6 +40,7 @@ input,select,textarea{font-family:inherit}
 #app{min-height:100vh}
 header.top{background:var(--charcoal);color:var(--off-white);padding:18px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20;box-shadow:var(--shadow);}
 header.top .brand{display:flex;align-items:center;gap:10px}
+.sync-state{font-size:.72rem;color:#9ca3af;font-weight:600;letter-spacing:.02em;margin-left:4px}
 header.top .brand .dot{width:12px;height:12px;background:var(--accent);border-radius:50%;box-shadow:0 0 0 4px rgba(79,70,229,.25)}
 header.top h1{font-size:1.7rem;margin:0;color:var(--off-white)}
 header.top .actions{display:flex;gap:10px;align-items:center}
@@ -316,7 +317,7 @@ td img{width:36px;height:36px;object-fit:cover;border-radius:6px;vertical-align:
 
 <div id="app" class="hidden">
   <header class="top">
-    <div class="brand"><span class="dot"></span><h1>FIGURE VAULT</h1></div>
+    <div class="brand"><span class="dot"></span><h1>FIGURE VAULT</h1><span id="sync-state" class="sync-state hidden" aria-live="polite"></span></div>
     <div class="actions" style="position:relative">
       <div class="view-toggle" style="margin-left:0">
         <button id="btn-page-collection" class="active" onclick="setPage('collection')">Collection</button>
@@ -447,7 +448,7 @@ const LS = {
   apiUrl: 'afv_api_url', token: 'afv_token', view: 'afv_view',
   customIp: 'afv_custom_ip', customType: 'afv_custom_type',
   customDelivery: 'afv_custom_delivery', hiddenSellers: 'afv_hidden_sellers',
-  spendCollapsed: 'afv_spend_collapsed'
+  spendCollapsed: 'afv_spend_collapsed', dataCache: 'afv_data_cache'
 };
 const IP_PRESETS = ['Dragon Ball','One Piece','MHA','Cartoon Network','DC','Marvel','Naruto','One Punch Man','Pokemon','Others'];
 const PRODUCT_TYPE_OPTIONS = ['Funko Pop','Banpresto','Gunpla','Bandai Kits','3D Prints','Others'];
@@ -478,6 +479,7 @@ function saveApiUrl(){
   const v = document.getElementById('cfg-api-url').value.trim();
   if(!v){ toast('Enter the Web app URL first'); return; }
   localStorage.setItem(LS.apiUrl, v);
+  clearDataCache();
   toast('API URL saved');
   updateLoginCfgVisibility();
 }
@@ -506,6 +508,7 @@ function saveApiUrlFromSettings(){
   const v = document.getElementById('settings-api-url').value.trim();
   if(!v){ toast('Enter the Web app URL first'); return; }
   localStorage.setItem(LS.apiUrl, v);
+  clearDataCache();
   toast('Backend URL updated');
   document.getElementById('settings-menu').classList.add('hidden');
   loadData();
@@ -546,7 +549,7 @@ async function doLogin(){
     }
   }catch(e){ errEl.textContent = 'Could not reach the backend. Check the API URL.'; }
 }
-function logout(){ localStorage.removeItem(LS.token); location.reload(); }
+function logout(){ localStorage.removeItem(LS.token); clearDataCache(); location.reload(); }
 
 async function showApp(){
   document.getElementById('login-screen').classList.add('hidden');
@@ -576,19 +579,66 @@ function setPage(p){
   if(p==='bookmarks') renderBookmarks();
 }
 
-async function loadData(){
-  document.getElementById('gallery').innerHTML = '<div class="loading">Loading your collection…</div>';
-  const data = await api('getAll');
-  if(!data.ok){ toast(data.error || 'Failed to load'); if(data.error==='Unauthorized'){ localStorage.removeItem(LS.token); location.reload(); } return; }
-  STATE.orders = data.orders || [];
-  STATE.figures = data.figures || [];
-  STATE.sellers = data.sellers || [];
-  STATE.bookmarks = data.bookmarks || [];
+/* ---- Saved copy of the last loaded data (instant start) ----
+   On opening the site, the collection from the previous visit is shown straight away while the
+   fresh copy loads from Google in the background. Kept in this browser only, tied to the saved
+   Apps Script URL, and cleared on log out. */
+function readDataCache(){
+  try{
+    const c = JSON.parse(localStorage.getItem(LS.dataCache) || 'null');
+    return (c && c.url === getApiUrl() && c.data) ? c : null;
+  }catch(e){ return null; }
+}
+function writeDataCache(data){
+  try{ localStorage.setItem(LS.dataCache, JSON.stringify({ url: getApiUrl(), at: Date.now(), data })); }
+  catch(e){ try{ localStorage.removeItem(LS.dataCache); }catch(_){} } // storage full — just skip caching
+}
+function clearDataCache(){ try{ localStorage.removeItem(LS.dataCache); }catch(e){} }
+function setSyncState(text){
+  const el = document.getElementById('sync-state');
+  if(el){ el.textContent = text || ''; el.classList.toggle('hidden', !text); }
+}
+function applyData(d){
+  STATE.orders = d.orders || [];
+  STATE.figures = d.figures || [];
+  STATE.sellers = d.sellers || [];
+  STATE.bookmarks = d.bookmarks || [];
   refreshAllMselButtons('col');
   refreshAllMselButtons('db');
   render();
   if(STATE.page === 'dashboard') renderAnalyticsDashboard();
   if(STATE.page === 'bookmarks') renderBookmarks();
+}
+let LOADED_ONCE = false;
+async function loadData(){
+  let shownFromCache = null;
+  if(!LOADED_ONCE){
+    const cached = readDataCache();
+    if(cached){
+      applyData(cached.data);
+      shownFromCache = JSON.stringify(cached.data);
+      setSyncState('Updating…');
+    } else {
+      document.getElementById('gallery').innerHTML = '<div class="loading">Loading your collection…</div>';
+    }
+  } else {
+    setSyncState('Updating…');
+  }
+  let data;
+  try{ data = await api('getAll'); }
+  catch(e){ data = { ok:false, error:'Could not reach the backend. Check your connection.' }; }
+  setSyncState('');
+  if(!data.ok){
+    if(data.error==='Unauthorized'){ clearDataCache(); localStorage.removeItem(LS.token); location.reload(); return; }
+    toast(shownFromCache ? "Couldn't refresh — showing your last saved copy" : (data.error || 'Failed to load'));
+    return;
+  }
+  LOADED_ONCE = true;
+  const fresh = { orders: data.orders || [], figures: data.figures || [], sellers: data.sellers || [], bookmarks: data.bookmarks || [] };
+  writeDataCache(fresh);
+  // Nothing changed since the saved copy: leave the page as it is (no flicker, scroll position kept).
+  if(shownFromCache !== null && JSON.stringify(fresh) === shownFromCache) return;
+  applyData(fresh);
 }
 
 /* option lists = admin-added custom values ∪ presets ∪ whatever's actually used in the data, always deduped, 'Others' pinned last */
@@ -1282,7 +1332,7 @@ function renderGallery(rows){
         <span class="badge" style="left:auto;right:8px;background:var(--ink);color:#fff">#${idx+1}</span>
         ${showCheckbox ? `<input type="checkbox" class="card-checkbox" style="right:auto;left:8px" ${isChecked?'checked':''} onclick="event.stopPropagation(); ${toggleFn}('${r.figureId}')">` : ''}
         ${r.isGroup ? '<span class="badge">GROUP BUY</span>' : ''}
-        ${r.imageUrl ? `<img src="${esc(r.imageUrl)}" loading="lazy">` : '<span class="ph">NO IMAGE</span>'}
+        ${r.imageUrl ? `<img src="${esc(thumbUrl(r.imageUrl, THUMB_CARD))}" loading="lazy" decoding="async">` : '<span class="ph">NO IMAGE</span>'}
       </div>
       <div class="body">
         <h3>${esc(r.name)}</h3>
@@ -1395,7 +1445,7 @@ function renderTable(rows){
   tb.innerHTML = rows.map((r,idx)=>`
     <tr>
       <td>${idx+1}</td>
-      <td>${r.imageUrl?`<img src="${esc(r.imageUrl)}" onclick="openViewModal('${r.figureId}')" style="cursor:zoom-in">`:''}</td>
+      <td>${r.imageUrl?`<img src="${esc(thumbUrl(r.imageUrl, THUMB_ROW))}" loading="lazy" decoding="async" width="36" height="36" onclick="openViewModal('${r.figureId}')" style="cursor:zoom-in">`:''}</td>
       <td>${esc(r.name)}${r.isGroup?' <span class="badge" style="position:static">GB</span>':''}</td>
       <td>${esc(r.seller)}</td>
       <td>${esc(r.ip||'')}</td>
@@ -2208,7 +2258,7 @@ function openGroupModal(groupBuyId){
             </td>
           </tr>`; }).join('')}</tbody>
         </table>
-        <div class="thumb-strip">${figs.filter(f=>f['Image URL']).map(f=>`<img src="${esc(f['Image URL'])}">`).join('')}</div>
+        <div class="thumb-strip">${figs.filter(f=>f['Image URL']).map(f=>`<img src="${esc(thumbUrl(f['Image URL'], THUMB_STRIP))}" loading="lazy" decoding="async">`).join('')}</div>
         <div class="modal-actions" style="flex-wrap:wrap">
           <button class="btn btn-ghost" style="color:var(--danger)" onclick="deleteOrderConfirm('${o['Order ID']}')">Delete Everything</button>
           <button class="btn btn-ghost-dark" onclick="ungroupBundleConfirm('${o['Order ID']}')">Ungroup (keep figures)</button>
@@ -2460,7 +2510,7 @@ function renderBookmarks(){
     const host = bmHost(b['Link']);
     const chips = [b['IP'], b['Product Type']].filter(Boolean).map(v=>`<span class="chip">${esc(v)}</span>`).join('');
     return `<div class="card bm-card" onclick="openBookmarkModal('${esc(b['Bookmark ID'])}')">
-      <div class="img-wrap">${b['Image URL']?`<img src="${esc(b['Image URL'])}" loading="lazy" alt="${esc(b['Figurine Name'])}">`:'<span class="ph">NO IMAGE</span>'}</div>
+      <div class="img-wrap">${b['Image URL']?`<img src="${esc(thumbUrl(b['Image URL'], THUMB_CARD))}" loading="lazy" decoding="async" alt="${esc(b['Figurine Name'])}">`:'<span class="ph">NO IMAGE</span>'}</div>
       <div class="body">
         <h3>${esc(b['Figurine Name'])}</h3>
         <div class="price">₹${fmt(b['Price'])}</div>
@@ -2534,6 +2584,24 @@ async function deleteBookmarkConfirm(bookmarkId){
   const res = await api('deleteBookmark', { bookmarkId });
   if(res.ok){ toast('Bookmark deleted'); closeModal(); loadData(); } else toast(res.error);
 }
+
+
+/* ---- Smaller photos for small spots ----
+   Drive thumbnail links can be asked for any width. Cards, table rows and strips only show a
+   small version, so they request a smaller file; the photo viewer still uses the full size.
+   Older Drive link styles (uc?id=…, /file/d/…/view, open?id=…) are converted to the same form. */
+function thumbUrl(url, width){
+  const s = String(url || '');
+  if(!/^https:\/\/drive\.google\.com\//i.test(s)) return s;
+  let id = null, m;
+  if(/\/thumbnail\?/i.test(s)){
+    return /[?&]sz=w\d+/i.test(s) ? s.replace(/([?&]sz=)w\d+/i, '$1w' + width) : s + '&sz=w' + width;
+  }
+  if((m = /[?&]id=([\w-]+)/.exec(s))) id = m[1];
+  else if((m = /\/file\/d\/([\w-]+)/.exec(s))) id = m[1];
+  return id ? 'https://drive.google.com/thumbnail?id=' + id + '&sz=w' + width : s;
+}
+const THUMB_CARD = 600, THUMB_ROW = 120, THUMB_STRIP = 160;
 
 /* ===================== Boot ===================== */
 (function boot(){
